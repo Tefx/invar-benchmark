@@ -438,7 +438,14 @@ class BenchmarkRunner:
         output_chunks: list[str] = []
         start_time = time.time()
         last_output_time = time.time()
-        idle_threshold = 5  # seconds before sending fallback continuation (automated testing)
+        recent_buffer = ""  # Buffer for pattern detection
+        waiting_for_input = False  # Flag for cursor-based detection
+
+        # Patterns indicating Claude CLI is waiting for user input
+        # [?25h = ANSI "show cursor" - emitted when CLI waits for input
+        CURSOR_SHOW = "\x1b[?25h"
+        WAITING_PATTERNS = ["Next step?", "What would you like", "How should I proceed"]
+        IDLE_FALLBACK_THRESHOLD = 60  # Fallback: if idle 60s with cursor shown, send continue
 
         try:
             while True:
@@ -461,21 +468,43 @@ class BenchmarkRunner:
                             output_chunks.append(data)
                             last_output_time = time.time()
 
-                            # Auto-respond to Y/N prompts only
+                            # Update recent buffer (keep last 500 chars for pattern matching)
+                            recent_buffer = (recent_buffer + data)[-500:]
+
+                            # Detect cursor show = CLI waiting for input
+                            if CURSOR_SHOW in data:
+                                waiting_for_input = True
+                            else:
+                                waiting_for_input = False
+
+                            # Auto-respond to Y/N prompts
                             if "Continue? [Y/n]" in data or "[Y/N]" in data:
                                 os.write(master, b"Y\n")
+                                waiting_for_input = False
                             elif "Auto-orchestrate?" in data:
                                 os.write(master, b"Y\n")
+                                waiting_for_input = False
                     except OSError:
                         # PTY closed
                         break
                 else:
-                    # No output - check if agent might be waiting for input
-                    idle_time = time.time() - last_output_time
-                    if idle_time > idle_threshold and process.poll() is None:
-                        # Agent is likely waiting for input - send fallback continuation
-                        os.write(master, b"continue\n")
-                        last_output_time = time.time()  # Reset to avoid spam
+                    # No output received this cycle
+                    if waiting_for_input and process.poll() is None:
+                        idle_time = time.time() - last_output_time
+
+                        # Primary: pattern-based detection (cursor + waiting patterns)
+                        has_waiting_pattern = any(p in recent_buffer for p in WAITING_PATTERNS)
+                        if has_waiting_pattern:
+                            os.write(master, b"continue\n")
+                            waiting_for_input = False
+                            recent_buffer = ""
+                            last_output_time = time.time()
+                        # Fallback: long idle with cursor shown (pattern might be missing)
+                        elif idle_time > IDLE_FALLBACK_THRESHOLD:
+                            os.write(master, b"continue\n")
+                            waiting_for_input = False
+                            recent_buffer = ""
+                            last_output_time = time.time()
 
                 # Check if process completed
                 if process.poll() is not None:
