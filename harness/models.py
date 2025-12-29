@@ -357,12 +357,21 @@ class ExperimentResult:
     invar_version: str = ""
     claude_code_version: str = ""
 
+    # Thread safety for parallel execution
+    _lock: object = field(default=None, repr=False)
+
+    def __post_init__(self):
+        """Initialize lock for thread safety."""
+        import threading
+        object.__setattr__(self, '_lock', threading.Lock())
+
     def add_result(self, result: TaskResult) -> None:
-        """Add a task result to the appropriate group."""
-        if result.group == ExperimentGroup.CONTROL:
-            self.control_results.append(result)
-        else:
-            self.treatment_results.append(result)
+        """Add a task result to the appropriate group (thread-safe)."""
+        with self._lock:
+            if result.group == ExperimentGroup.CONTROL:
+                self.control_results.append(result)
+            else:
+                self.treatment_results.append(result)
 
     def get_summary(self) -> dict[str, Any]:
         """Get experiment summary statistics."""

@@ -774,19 +774,49 @@ class BenchmarkRunner:
         """Run experiment with Rich progress visualization."""
         # Lazy import to avoid requiring rich for simple commands
         from harness.display import ProgressDisplay
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        def run_single(task: Task, group: ExperimentGroup) -> TaskResult:
+            """Run a single task (for parallel execution)."""
+            return self.run_task(task, group, quiet=True)
 
         with ProgressDisplay(tasks) as display:
-            for task in tasks:
-                for group in groups:
-                    # Mark as running
+            # Build list of (task, group) pairs
+            work_items = [(task, group) for task in tasks for group in groups]
+
+            if self.config.parallel_tasks <= 1:
+                # Sequential execution (original behavior)
+                for task, group in work_items:
                     display.mark_task_running(task.id, group)
-
-                    # Run the task
-                    result = self.run_task(task, group, quiet=True)
+                    result = run_single(task, group)
                     experiment.add_result(result)
-
-                    # Mark as completed
                     display.mark_task_completed(task.id, group, result)
+            else:
+                # Parallel execution
+                with ThreadPoolExecutor(max_workers=self.config.parallel_tasks) as executor:
+                    # Submit all tasks
+                    future_to_work = {}
+                    for task, group in work_items:
+                        display.mark_task_running(task.id, group)
+                        future = executor.submit(run_single, task, group)
+                        future_to_work[future] = (task, group)
+
+                    # Collect results as they complete
+                    for future in as_completed(future_to_work):
+                        task, group = future_to_work[future]
+                        try:
+                            result = future.result()
+                        except Exception as e:
+                            # Create failed result on exception
+                            from harness.models import TaskResult, TaskStatus
+                            result = TaskResult(
+                                task_id=task.id,
+                                group=group,
+                                status=TaskStatus.FAILED,
+                                error_message=str(e),
+                            )
+                        experiment.add_result(result)
+                        display.mark_task_completed(task.id, group, result)
 
     def _run_with_simple_display(
         self,
@@ -917,6 +947,14 @@ def main():
         help="Timeout for interactive mode in seconds (default: 600)",
     )
 
+    parser.add_argument(
+        "--parallel",
+        type=int,
+        default=1,
+        metavar="N",
+        help="Number of parallel tasks (default: 1, sequential)",
+    )
+
     # Cache management (BM-03)
     parser.add_argument(
         "--cache-stats",
@@ -985,6 +1023,7 @@ def main():
         execution_mode=args.mode,
         max_turns=args.max_turns,
         interactive_timeout=args.interactive_timeout,
+        parallel_tasks=args.parallel,
         use_repo_cache=not args.no_cache,
         use_docker=args.docker,
         docker_timeout=args.docker_timeout,
