@@ -80,12 +80,18 @@ python -m harness.runner --model haiku --tier tier1_standard
 # Print mode (default, single-shot)
 python -m harness.runner --mode print
 
-# Interactive mode (PTY-based, multi-turn)
+# Interactive mode (PTY-based, multi-turn with auto-continuation)
 python -m harness.runner --mode interactive
 
 # Interactive with custom settings
 python -m harness.runner --mode interactive --max-turns 100 --interactive-timeout 900
 ```
+
+**Interactive Mode Features:**
+- LLM-based semantic detection (requires OpenAI API key)
+- Pattern-based fallback detection (cursor + waiting phrases)
+- Auto-responds to Y/N prompts and continuation requests
+- 60s idle fallback for edge cases
 
 ### SWE-bench Tasks
 
@@ -93,11 +99,11 @@ python -m harness.runner --mode interactive --max-turns 100 --interactive-timeou
 # List SWE tasks
 python -m harness.runner --dry-run --tier tier4_swe
 
-# Run SWE task (fast mode, host execution)
+# Run SWE task (Docker enabled by default for Python compatibility)
 python -m harness.runner --tier tier4_swe --task swe_astropy_astropy_6938
 
-# Run with Docker evaluation (reproducible)
-python -m harness.runner --tier tier4_swe --docker
+# Run without Docker (not recommended, may have Python version issues)
+python -m harness.runner --tier tier4_swe --no-docker
 
 # Check Docker/swebench availability
 python -m harness.runner --check-docker
@@ -106,6 +112,8 @@ python -m harness.runner --check-docker
 python scripts/convert_swe_bench.py --limit 50
 python scripts/convert_swe_bench.py --repos django/django --limit 20
 ```
+
+**Note:** Docker is enabled by default for SWE-bench tasks to ensure correct Python version compatibility.
 
 ### Repository Cache (SWE-bench)
 
@@ -259,7 +267,9 @@ invar-benchmark/
 │   ├── config.py              # Configuration management
 │   ├── collector.py           # Metrics collection (AST-based)
 │   ├── display.py             # Progress visualization
-│   └── models.py              # Data models
+│   ├── models.py              # Data models
+│   ├── llm_detector.py        # LLM-based input detection
+│   └── docker_runner.py       # Docker evaluation for SWE tasks
 ├── eval/                       # Analysis
 │   ├── analysis.py            # Welch's t-test, Cohen's d
 │   └── report.py              # Report generation
@@ -329,12 +339,27 @@ Create a JSON file in the appropriate tier directory:
 - Python 3.11+
 - Claude Code CLI installed and authenticated
 - Virtual environment (recommended)
+- Docker (required for SWE-bench tasks)
 
 ### Core Dependencies
 
 ```bash
 pip install -e ".[dev]"
 ```
+
+### LLM Detection (Optional, for Interactive Mode)
+
+For improved interactive mode automation, configure OpenAI API:
+
+```bash
+# Create .env file with API key
+echo "OPENAI_API_KEY=sk-..." > .env
+
+# Install openai package
+pip install openai
+```
+
+The LLM detector uses GPT-4o-mini for cost-efficient semantic detection of agent waiting states. Falls back to pattern-based detection if unavailable.
 
 ### Treatment Group Dependencies
 
