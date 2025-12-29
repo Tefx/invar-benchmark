@@ -3,7 +3,7 @@
 
 | Always | Remember |
 |--------|----------|
-| **Verify** | `invar guard` — NOT pytest, NOT crosshair |
+| **Verify** | `invar_guard` — NOT pytest, NOT crosshair |
 | **Core** | `@pre/@post` + doctests, NO I/O imports |
 | **Shell** | Returns `Result[T, E]` from `returns` library |
 | **Flow** | USBV: Understand → Specify → Build → Validate |
@@ -46,7 +46,7 @@ Your last message for an implementation task MUST display:
 ✓ Final: guard PASS | 0 errors, 2 warnings
 ```
 
-Execute `invar guard` and show this one-line summary.
+Execute `invar_guard()` and show this one-line summary.
 
 
 This is your sign-out. Completes the Check-In/Final pair.
@@ -194,7 +194,7 @@ enters /review. Say "skip" to bypass.
 <!--/invar:managed--><!--invar:project-->
 ## Benchmark Task Project
 
-This is a benchmark task project for testing the Invar framework.
+This is a benchmark task for testing the Invar framework with Claude Code.
 
 ### Project Structure
 
@@ -207,7 +207,7 @@ src/
 ### Rules
 
 1. **Language:** English for docs/code.
-2. **Verify Always:** Run `invar guard` after changes.
+2. **Verify Always:** Run `invar_guard()` after changes.
 3. **Warning Policy:** Fix warnings in files you modify.
 
 ### Dependencies
@@ -216,7 +216,13 @@ src/
 pip install deal returns invar-runtime
 ```
 
-<!--/invar:project-->
+<!--/invar:project--><!--invar:user-->
+<!-- ========================================================================
+     USER REGION - EDITABLE
+     Add your team conventions and project-specific rules below.
+     This section is preserved across invar update and sync-self.
+     ======================================================================== -->
+<!--/invar:user-->
 
 ---
 
