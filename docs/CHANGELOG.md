@@ -382,12 +382,130 @@ python -m harness.runner --tier tier3_integration --model opus
 python -m harness.runner --tier tier1_standard --model haiku
 ```
 
+## 2024-12-30
+
+### BM-10: Conversation Message Preservation ✅
+
+**Problem:** Check-In detection was unreliable; conversation messages were not preserved in results.
+
+**Fixed:**
+- `harness/conversation_parser.py`: Added `messages` field to `ConversationMetrics`
+- Stricter Check-In pattern detection using regex (`✓ Check-In:` prefix required)
+- Extract both user and assistant message content
+- Populate messages from JSONL logs
+
+**Detection Pattern:**
+```python
+# Old (too permissive): "Check-In:" anywhere in content
+# New (strict): r"✓\s*Check-In:" at line start
+```
+
+### BM-09: Multiple Tier Selection ✅
+
+**Added:** Support for running multiple tiers in single command.
+
+```bash
+# Run tier1 and tier2 together
+python -m harness.runner --tier tier1_standard --tier tier2_contracts
+
+# Run all non-SWE tiers
+python -m harness.runner --tier tier1_standard --tier tier2_contracts --tier tier3_integration
+```
+
+### BM-08: Exercism Task Expansion ✅
+
+**Added:** 128 Exercism tasks to benchmark dataset.
+
+**Implementation:**
+- `scripts/convert_exercism.py`: Script to convert Exercism Python track exercises
+- Auto-categorization: Tier 1 (standard) vs Tier 2 (contracts) based on exercise characteristics
+- Fix: Remove `self` parameter from converted test functions
+
+**Task Distribution:**
+| Tier | Count | Source |
+|------|-------|--------|
+| Tier 1 (Standard) | 108 | Exercism (simple exercises) |
+| Tier 2 (Contracts) | 20 | Exercism (stateful/validation exercises) |
+| **Total New** | **128** | |
+
+### BM-07: Skill Tool Invocation (Reverted)
+
+**Attempted:** Add system prompt to enforce Skill tool invocation.
+
+**Result:** Reverted - approach was not effective. Solution moved to DX-67 (explicit Skill tool syntax in routing table).
+
+### BM-06: Conversation Log Parsing Robustness ✅
+
+**Fixed:** Improved JSONL parsing to handle edge cases:
+- Empty lines in log files
+- Malformed JSON entries
+- Missing fields graceful handling
+
+### BM-05: Natural Routing Mode ✅
+
+**Added:** Fair comparison mode that allows natural workflow routing.
+
+**Changes:**
+- Copy `.claude/skills/` to treatment workspace
+- Enable Skill tool invocation for treatment group
+- Fair A/B comparison without artificial restrictions
+
+### BM-04: JSONL Conversation Parser ✅
+
+**Added:** Accurate metrics extraction from Claude Code conversation logs.
+
+**Implementation:**
+- `harness/conversation_parser.py`: Parse `.claude/projects/<id>/conversations/<id>.jsonl`
+- Extract: token usage, turn count, tool calls, protocol markers
+- Track Check-In and Final markers for Invar protocol compliance
+
+**Metrics Tracked:**
+| Metric | Source | Description |
+|--------|--------|-------------|
+| `input_tokens` | JSONL | Total input tokens |
+| `output_tokens` | JSONL | Total output tokens |
+| `total_turns` | JSONL | Conversation turns |
+| `checkin_rate` | Pattern | Check-In protocol compliance |
+| `final_rate` | Pattern | Final marker compliance |
+
+### Earlier Changes (Dec 29)
+
+**Parallel Execution:**
+- Added `--parallel N` flag for concurrent task execution
+- Recommended: 2-4 for tier1-3, 1-2 for tier4_swe (Docker resource limit)
+
+**LLM-based Detection:**
+- Added semantic detection for agent waiting states (requires OpenAI API)
+- Pattern-based fallback when LLM unavailable
+- 60s idle timeout as final fallback
+
+**Configuration Updates:**
+- Timeout increased to 30 minutes (1800s)
+- Max turns increased to 1000
+- Docker enabled by default for SWE tasks
+
+## Proposals
+
+| ID | Title | Status |
+|----|-------|--------|
+| [BM-01](proposals/BM-01-swe-bench-integration.md) | SWE-Bench Integration | **Implemented** |
+| [BM-02](proposals/BM-02-interactive-mode-benchmark.md) | Interactive Mode Benchmark | **Implemented** |
+| [BM-03](proposals/BM-03-swe-bench-improvements.md) | SWE-Bench Improvements | **Implemented** |
+| BM-04 | JSONL Conversation Parser | **Implemented** |
+| BM-05 | Natural Routing Mode | **Implemented** |
+| BM-06 | Parsing Robustness | **Implemented** |
+| BM-07 | Skill Invocation Enforcement | **Reverted** |
+| BM-08 | Exercism Task Expansion | **Implemented** |
+| BM-09 | Multiple Tier Selection | **Implemented** |
+| BM-10 | Message Preservation | **Implemented** |
+
 ## Pending Work
 
 1. Run full benchmark suite (with interactive mode comparison)
 2. Generate HTML reports with charts
-3. Add parallel execution support
+3. ~~Add parallel execution support~~ ✅ Done
 4. ~~Implement BM-01 (SWE-Bench integration)~~ ✅ Done (basic infrastructure)
 5. ~~Implement BM-02 Phase 2 (PTY integration into runner.py)~~ ✅ Done
 6. Create task difficulty calibration
 7. ~~Add Docker isolation for SWE-bench tasks~~ ✅ Done (BM-03 Phase 2)
+8. ~~Expand task dataset~~ ✅ Done (BM-08: 128 Exercism tasks)

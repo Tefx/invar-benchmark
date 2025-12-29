@@ -6,11 +6,11 @@ A benchmark framework for testing the effectiveness of the [Invar](https://githu
 
 | Component | Count | Status |
 |-----------|-------|--------|
-| Tier 1 Tasks | 7 | Ready |
-| Tier 2 Tasks | 8 | Ready |
+| Tier 1 Tasks | 115 | Ready |
+| Tier 2 Tasks | 28 | Ready |
 | Tier 3 Tasks | 5 | Ready |
-| Tier 4 SWE Tasks | 6 | Ready |
-| **Total** | **26** | **Validated** |
+| Tier 4 SWE Tasks | 7 | Ready |
+| **Total** | **155** | **Validated** |
 
 ## Overview
 
@@ -56,6 +56,9 @@ python -m harness.runner --tier tier1_standard
 python -m harness.runner --tier tier2_contracts
 python -m harness.runner --tier tier3_integration
 python -m harness.runner --tier tier4_swe
+
+# Run multiple tiers
+python -m harness.runner --tier tier1_standard --tier tier2_contracts
 
 # Run specific task
 python -m harness.runner --task task_001_average
@@ -209,9 +212,10 @@ The runner displays real-time progress:
 
 ## Task Tiers
 
-### Tier 1: Standard Tasks (7)
+### Tier 1: Standard Tasks (115)
 Baseline tasks to verify Invar doesn't add overhead.
 
+**Custom Tasks (7):**
 | Task | Description | Source |
 |------|-------------|--------|
 | task_001 | Calculate Average | Custom |
@@ -222,9 +226,12 @@ Baseline tasks to verify Invar doesn't add overhead.
 | task_006 | Isogram | Exercism |
 | task_007 | Pangram | Exercism |
 
-### Tier 2: Contract-Focused Tasks (8)
+**Exercism Tasks (108):** Including accumulate, acronym, affine_cipher, anagram, armstrong_numbers, bob, crypto_square, diamond, etl, flatten_array, gigasecond, grains, hello_world, leap, nth_prime, reverse_string, rna_transcription, roman_numerals, say, scrabble_score, series, space_age, word_count, and 85 more.
+
+### Tier 2: Contract-Focused Tasks (28)
 Tasks where @pre/@post contracts provide value.
 
+**Custom Tasks (8):**
 | Task | Contract Focus |
 |------|----------------|
 | task_101 | Range validation with @pre/@post |
@@ -235,6 +242,8 @@ Tasks where @pre/@post contracts provide value.
 | task_106 | Pagination bounds |
 | task_107 | Password validation rules |
 | task_108 | Shopping cart constraints |
+
+**Exercism Tasks (20):** Including bank_account, binary_search, binary_search_tree, bowling, circular_buffer, clock, complex_numbers, custom_set, grade_school, isbn_verifier, linked_list, luhn, matrix, phone_number, pythagorean_triplet, rational_numbers, robot_simulator, simple_linked_list, triangle, and kindergarten_garden.
 
 ### Tier 3: Integration Tasks (5)
 Complex multi-component tasks with Result types.
@@ -247,7 +256,7 @@ Complex multi-component tasks with Result types.
 | task_204 | Task scheduler with DAG dependencies |
 | task_205 | Layered configuration manager |
 
-### Tier 4: SWE-bench Tasks (6)
+### Tier 4: SWE-bench Tasks (7)
 Real-world bug fixes from open source projects.
 
 | Task | Repository | Description |
@@ -258,6 +267,7 @@ Real-world bug fixes from open source projects.
 | swe_astropy_astropy_14365 | astropy/astropy | Real SWE-bench task |
 | swe_astropy_astropy_14995 | astropy/astropy | Real SWE-bench task |
 | swe_sample_simple_bug | sample/calculator | Sample task (local) |
+| + 1 more | Various | Additional SWE-bench tasks |
 
 **SWE-bench Dataset:**
 - Full: 2,294 tasks
@@ -271,11 +281,15 @@ Real-world bug fixes from open source projects.
 | **Correctness** | Test Pass Rate | Visible tests |
 | | Hidden Test Pass Rate | Hidden edge case tests |
 | **Efficiency** | Iterations | Number of tool calls |
-| | Token Usage | Approximate token consumption |
+| | Token Usage | Input/output tokens (from JSONL logs) |
+| | Total Turns | Conversation turn count |
 | **Quality** | Lines of Code | Generated code size |
 | | Complexity | Cyclomatic complexity |
 | **Invar-Specific** | Contract Coverage | % functions with @pre/@post |
 | | Guard Results | Static analysis errors/warnings |
+| | Check-In Rate | Protocol compliance (✓ Check-In marker) |
+| | Final Rate | Protocol completion (✓ Final marker) |
+| | Skill Calls | Number of Skill tool invocations |
 
 ## Directory Structure
 
@@ -285,6 +299,7 @@ invar-benchmark/
 │   ├── runner.py              # Main runner with Rich display
 │   ├── config.py              # Configuration management
 │   ├── collector.py           # Metrics collection (AST-based)
+│   ├── conversation_parser.py # JSONL conversation log parser
 │   ├── display.py             # Progress visualization
 │   ├── models.py              # Data models
 │   ├── llm_detector.py        # LLM-based input detection
@@ -292,11 +307,14 @@ invar-benchmark/
 ├── eval/                       # Analysis
 │   ├── analysis.py            # Welch's t-test, Cohen's d
 │   └── report.py              # Report generation
+├── scripts/                    # Utility scripts
+│   ├── convert_swe_bench.py   # Download/convert SWE-bench tasks
+│   └── convert_exercism.py    # Download/convert Exercism tasks
 ├── tasks/                      # Task definitions (JSON)
-│   ├── tier1_standard/        # 7 baseline tasks
-│   ├── tier2_contracts/       # 8 contract tasks
+│   ├── tier1_standard/        # 115 baseline tasks (7 custom + 108 Exercism)
+│   ├── tier2_contracts/       # 28 contract tasks (8 custom + 20 Exercism)
 │   ├── tier3_integration/     # 5 integration tasks
-│   └── tier4_swe/             # 6 SWE-bench tasks
+│   └── tier4_swe/             # 7 SWE-bench tasks
 ├── configs/                    # Group configurations
 │   ├── control/               # Empty config
 │   └── treatment/             # Full Invar config
