@@ -563,6 +563,15 @@ class BenchmarkRunner:
         """
         try:
             data = json.loads(stdout)
+        except json.JSONDecodeError:
+            # Fallback: store raw output as single message if JSON parsing fails
+            if stdout.strip():
+                result.conversation_messages.append(
+                    ConversationMessage(role="assistant", content=stdout[:10000])
+                )
+            return
+
+        try:
 
             # Extract conversation messages
             messages = data.get("messages", [])
@@ -627,8 +636,9 @@ class BenchmarkRunner:
             )
             result.metrics.iterations = max(1, result.total_turns)
 
-        except json.JSONDecodeError:
-            # Not valid JSON, fall back to text parsing
+        except (KeyError, TypeError, IndexError) as e:
+            # JSON parsed but structure unexpected, fall back to text parsing
+            logger.debug(f"JSON structure parsing failed: {e}")
             self._parse_interactive_output(stdout, result)
 
     def _parse_interactive_output(self, stdout: str, result: TaskResult) -> None:
