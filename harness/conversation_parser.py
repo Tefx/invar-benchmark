@@ -13,6 +13,7 @@ This module extracts accurate metrics from these logs including:
 
 import json
 import os
+import re
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -54,6 +55,9 @@ class ConversationMetrics:
     first_message_time: str = ""
     last_message_time: str = ""
 
+    # Message content (for conversation preservation)
+    messages: list[dict] = field(default_factory=list)
+
     @property
     def total_tokens(self) -> int:
         """Total tokens including cache."""
@@ -91,6 +95,7 @@ class ConversationMetrics:
             "final_status": self.final_status,
             "first_message_time": self.first_message_time,
             "last_message_time": self.last_message_time,
+            "messages": self.messages,
         }
 
 
@@ -239,6 +244,15 @@ def _process_log_entry(
             metrics.first_message_time = timestamp
         metrics.last_message_time = timestamp
 
+        # Extract user message content
+        msg = data.get('message', {})
+        content = msg.get('content', '')
+        if isinstance(content, str) and content:
+            metrics.messages.append({
+                'role': 'user',
+                'content': content[:5000],  # Truncate for storage
+            })
+
     elif entry_type == 'assistant':
         metrics.assistant_messages += 1
         timestamp = data.get('timestamp', '')
@@ -255,6 +269,7 @@ def _process_log_entry(
 
         # Process content blocks
         content = msg.get('content', [])
+        text_parts = []
         if isinstance(content, list):
             for block in content:
                 if not isinstance(block, dict):
@@ -276,18 +291,28 @@ def _process_log_entry(
 
                 elif block_type == 'text':
                     text = block.get('text', '')
+                    text_parts.append(text)
 
-                    # Check for Invar protocol markers
-                    if 'Check-In' in text or '✓ Check-In' in text:
+                    # Check for Invar protocol markers (strict patterns)
+                    # Check-In format: "✓ Check-In:" or "Check-In:" at line start
+                    if re.search(r'^✓?\s*Check-In:', text, re.MULTILINE):
                         metrics.has_checkin = True
 
-                    if 'Final:' in text or '✓ Final' in text:
+                    # Final format: "✓ Final:" or "Final:" followed by status
+                    if re.search(r'^✓?\s*Final:', text, re.MULTILINE):
                         metrics.has_final = True
-                        # Extract status
-                        if 'PASS' in text.upper():
-                            metrics.final_status = 'PASS'
-                        elif 'FAIL' in text.upper():
-                            metrics.final_status = 'FAIL'
+                        # Extract status from same line
+                        final_match = re.search(r'^✓?\s*Final:.*?(PASS|FAIL)', text, re.MULTILINE | re.IGNORECASE)
+                        if final_match:
+                            metrics.final_status = final_match.group(1).upper()
+
+        # Store assistant message content
+        if text_parts:
+            combined_text = '\n'.join(text_parts)
+            metrics.messages.append({
+                'role': 'assistant',
+                'content': combined_text[:5000],  # Truncate for storage
+            })
 
 
 def parse_workspace_conversation(

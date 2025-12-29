@@ -727,6 +727,16 @@ class BenchmarkRunner:
             result.api_output_tokens = conv_metrics.output_tokens
             result.total_turns = conv_metrics.total_turns
 
+            # Populate conversation messages from JSONL if not already populated
+            if not result.conversation_messages and conv_metrics.messages:
+                for msg in conv_metrics.messages:
+                    result.conversation_messages.append(
+                        ConversationMessage(
+                            role=msg.get('role', 'unknown'),
+                            content=msg.get('content', ''),
+                        )
+                    )
+
         except Exception as e:
             # Log error but don't fail the task
             if not getattr(self, '_quiet', False):
