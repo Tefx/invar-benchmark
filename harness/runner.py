@@ -437,6 +437,8 @@ class BenchmarkRunner:
 
         output_chunks: list[str] = []
         start_time = time.time()
+        last_output_time = time.time()
+        idle_threshold = 5  # seconds before sending fallback continuation (automated testing)
 
         try:
             while True:
@@ -457,15 +459,23 @@ class BenchmarkRunner:
                         data = os.read(master, 4096).decode("utf-8", errors="replace")
                         if data:
                             output_chunks.append(data)
+                            last_output_time = time.time()
 
-                            # Auto-respond to common prompts
+                            # Auto-respond to Y/N prompts only
                             if "Continue? [Y/n]" in data or "[Y/N]" in data:
                                 os.write(master, b"Y\n")
-                            elif "Choose option" in data:
-                                os.write(master, b"1\n")
+                            elif "Auto-orchestrate?" in data:
+                                os.write(master, b"Y\n")
                     except OSError:
                         # PTY closed
                         break
+                else:
+                    # No output - check if agent might be waiting for input
+                    idle_time = time.time() - last_output_time
+                    if idle_time > idle_threshold and process.poll() is None:
+                        # Agent is likely waiting for input - send fallback continuation
+                        os.write(master, b"continue\n")
+                        last_output_time = time.time()  # Reset to avoid spam
 
                 # Check if process completed
                 if process.poll() is not None:
