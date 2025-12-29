@@ -33,11 +33,10 @@ No visible check-in = Session not started.
 
 ### Context Refresh (DX-54)
 
-Re-read `.invar/context.md` when:
-1. Entering any workflow (/develop, /review, etc.)
-2. Completing a TodoWrite task (before moving to next)
-3. Conversation exceeds ~15-20 exchanges
-4. Unsure about project rules or patterns
+Before any workflow action:
+1. Read `.invar/context.md` (especially Key Rules section)
+2. **Check Task Router** — read examples before coding in `core/` or `shell/`
+3. Display routing announcement
 
 **Refresh is transparent** — do not announce "I'm refreshing context."
 
