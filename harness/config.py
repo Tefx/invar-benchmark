@@ -33,6 +33,11 @@ class BenchmarkConfig:
     max_turns: int = 200  # Max turns for interactive mode
     interactive_timeout: int = 600  # Timeout for interactive mode (seconds)
 
+    # Routing mode settings (BM-05: Fair Benchmark)
+    # natural_routing=True: No explicit /develop prefix, let CLAUDE.md routing rules activate
+    # natural_routing=False: Force /develop prefix (legacy, for debugging only)
+    natural_routing: bool = True  # Default: fair benchmark mode
+
     # SWE-bench settings (BM-03)
     use_repo_cache: bool = True  # Cache bare repos for faster subsequent runs
     use_docker: bool = False  # Use Docker for SWE task execution
@@ -96,6 +101,7 @@ class BenchmarkConfig:
             "execution_mode": self.execution_mode,
             "max_turns": self.max_turns,
             "interactive_timeout": self.interactive_timeout,
+            "natural_routing": self.natural_routing,
             "use_repo_cache": self.use_repo_cache,
             "use_docker": self.use_docker,
             "docker_timeout": self.docker_timeout,
@@ -116,6 +122,7 @@ class BenchmarkConfig:
             execution_mode=data.get("execution_mode", "print"),
             max_turns=data.get("max_turns", 50),
             interactive_timeout=data.get("interactive_timeout", 600),
+            natural_routing=data.get("natural_routing", True),
             use_repo_cache=data.get("use_repo_cache", True),
             use_docker=data.get("use_docker", False),
             docker_timeout=data.get("docker_timeout", 1800),

@@ -37,6 +37,31 @@ from harness.conversation_parser import parse_workspace_conversation
 # ProgressDisplay imported lazily in _run_with_rich_display to avoid rich dependency
 # for simple commands like --check-docker
 
+# =============================================================================
+# TREATMENT GROUP PROMPT MODES (BM-05: Fair Benchmark)
+# =============================================================================
+#
+# Three modes for treatment group prompts:
+#
+# 1. NATURAL ROUTING (natural_routing=True, recommended for fair benchmarks)
+#    - No explicit skill prefix
+#    - Task prompt uses trigger words ("Implement...", "Add...", "Fix...")
+#    - CLAUDE.md routing rules should activate /develop skill naturally
+#    - Tests REAL framework effectiveness
+#
+# 2. INTERACTIVE MODE (natural_routing=False, use_interactive=True)
+#    - Uses USBV_SKILL_PREFIX_INTERACTIVE
+#    - Explicit "/develop" trigger in prompt
+#    - Forces skill invocation (bypasses natural routing test)
+#    - For debugging skill mechanics only
+#
+# 3. PRINT MODE (natural_routing=False, use_interactive=False)
+#    - Uses USBV_SKILL_PREFIX_PRINT
+#    - Embeds full USBV guidance (no Skill tool in print mode)
+#    - For headless/CI environments
+#
+# =============================================================================
+
 # USBV Skill prefix for treatment group prompts (PRINT MODE)
 # Embeds key /develop skill guidance directly in prompt since Skill tool unavailable
 USBV_SKILL_PREFIX_PRINT = """# Development Instructions (USBV Workflow)
@@ -232,12 +257,18 @@ class BenchmarkRunner:
                     cmd.extend(["--mcp-config", json.dumps(mcp_config)])
 
             # Build prompt with appropriate prefix for treatment group
+            # See BM-05 documentation at top of file for mode explanations
             if group == ExperimentGroup.TREATMENT:
-                if use_interactive:
-                    # Interactive mode: Use skill trigger to invoke /develop via Skill tool
+                if self.config.natural_routing:
+                    # NATURAL ROUTING: Let CLAUDE.md routing rules activate skills
+                    # Task prompts should contain trigger words: "Implement", "Add", "Fix"
+                    # This tests REAL framework effectiveness (fair benchmark)
+                    full_prompt = task.prompt
+                elif use_interactive:
+                    # FORCED INTERACTIVE: Explicit /develop trigger (debugging only)
                     full_prompt = USBV_SKILL_PREFIX_INTERACTIVE + task.prompt
                 else:
-                    # Print mode: Embed full USBV guidance (no Skill tool available)
+                    # FORCED PRINT: Embed full USBV guidance (no Skill tool available)
                     full_prompt = USBV_SKILL_PREFIX_PRINT + task.prompt
             else:
                 full_prompt = task.prompt
