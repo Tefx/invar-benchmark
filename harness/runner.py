@@ -73,7 +73,19 @@ Task:
 
 # Skill trigger prefix for treatment group prompts (INTERACTIVE MODE)
 # Uses trigger words to activate routing rules in CLAUDE.md → invokes /develop skill
+# NOTE: Must emphasize deal library (not icontract) for contract decorators
 USBV_SKILL_PREFIX_INTERACTIVE = """Implement the following task using the /develop skill workflow.
+
+IMPORTANT: Use `from deal import pre, post` for contracts (NOT icontract).
+Example:
+```python
+from deal import pre, post
+
+@pre(lambda x: x > 0)
+@post(lambda result: result >= 0)
+def calculate(x: int) -> int:
+    return x * x
+```
 
 Task:
 """
@@ -373,12 +385,18 @@ class BenchmarkRunner:
         """
         master, slave = pty.openpty()
 
+        # Use TERM=dumb to disable alternate screen buffer
+        # This ensures PTY output is captured even when Claude hits max turns
+        env = os.environ.copy()
+        env["TERM"] = "dumb"
+
         process = subprocess.Popen(
             cmd,
             stdin=slave,
             stdout=slave,
             stderr=slave,
             cwd=workspace,
+            env=env,
         )
         os.close(slave)
 
@@ -743,8 +761,8 @@ def main():
     parser.add_argument(
         "--max-turns",
         type=int,
-        default=50,
-        help="Max turns for interactive mode (default: 50)",
+        default=500,
+        help="Max turns for interactive mode (default: 500)",
     )
 
     parser.add_argument(
