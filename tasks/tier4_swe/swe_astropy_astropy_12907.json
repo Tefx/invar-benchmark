@@ -39,6 +39,7 @@
       "astropy/modeling/tests/test_separable.py::test_custom_model_separable"
     ],
     "version": "4.3",
-    "environment_setup_commit": "298ccb478e6bf092953bca67a3d29dc6c35f6752"
+    "environment_setup_commit": "298ccb478e6bf092953bca67a3d29dc6c35f6752",
+    "difficulty_score": 23
   }
 }

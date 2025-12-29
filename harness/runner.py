@@ -89,6 +89,10 @@ class BenchmarkRunner:
         """
         Load tasks from the tasks directory.
 
+        Tasks are sorted by difficulty:
+        - SWE tasks (tier4_swe): sorted by difficulty_score (easy to hard)
+        - Other tiers: sorted alphabetically by task ID
+
         Args:
             tier: Optional tier filter ('tier1_standard' or 'tier2_contracts')
 
@@ -110,7 +114,16 @@ class BenchmarkRunner:
                     task_data = json.load(f)
                     tasks.append(Task.from_dict(task_data))
 
-        return tasks
+        # Sort SWE tasks by difficulty_score (easy to hard)
+        # Other tasks remain in alphabetical order
+        swe_tasks = [t for t in tasks if t.tier == TaskTier.TIER4_SWE]
+        other_tasks = [t for t in tasks if t.tier != TaskTier.TIER4_SWE]
+
+        # Sort SWE tasks by difficulty_score ascending (easy first)
+        swe_tasks.sort(key=lambda t: t.difficulty_score)
+
+        # Combine: other tasks first (by tier order), then SWE tasks by difficulty
+        return other_tasks + swe_tasks
 
     def run_task(
         self,

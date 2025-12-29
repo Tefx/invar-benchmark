@@ -37,6 +37,7 @@
       "astropy/io/fits/tests/test_table.py::test_regression_scalar_indexing"
     ],
     "version": "1.3",
-    "environment_setup_commit": "848c8fa21332abd66b44efe3cb48b72377fb32cc"
+    "environment_setup_commit": "848c8fa21332abd66b44efe3cb48b72377fb32cc",
+    "difficulty_score": 23
   }
 }

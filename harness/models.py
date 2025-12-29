@@ -43,6 +43,21 @@ class SWEMetadata:
     pass_to_pass: list[str] = field(default_factory=list)  # Regression tests
     version: str = ""
     environment_setup_commit: str = ""
+    difficulty_score: int = 0  # Calculated: patch_lines + fail_tests*5 + pass_tests*0.1
+
+    @property
+    def calculated_difficulty_score(self) -> int:
+        """Calculate difficulty score from patch size and test counts.
+
+        Formula: patch_lines + fail_to_pass_count * 5 + pass_to_pass_count * 0.1
+        - Patch lines: Direct measure of change complexity
+        - Fail to pass: Tests to fix (weighted heavily)
+        - Pass to pass: Regression risk (low weight)
+        """
+        patch_lines = len(self.gold_patch.splitlines()) if self.gold_patch else 0
+        fail_count = len(self.fail_to_pass)
+        pass_count = len(self.pass_to_pass)
+        return int(patch_lines + fail_count * 5 + pass_count * 0.1)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -55,11 +70,12 @@ class SWEMetadata:
             "pass_to_pass": self.pass_to_pass,
             "version": self.version,
             "environment_setup_commit": self.environment_setup_commit,
+            "difficulty_score": self.difficulty_score or self.calculated_difficulty_score,
         }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "SWEMetadata":
-        return cls(
+        metadata = cls(
             instance_id=data.get("instance_id", ""),
             repo=data.get("repo", ""),
             base_commit=data.get("base_commit", ""),
@@ -69,7 +85,12 @@ class SWEMetadata:
             pass_to_pass=data.get("pass_to_pass", []),
             version=data.get("version", ""),
             environment_setup_commit=data.get("environment_setup_commit", ""),
+            difficulty_score=data.get("difficulty_score", 0),
         )
+        # Auto-calculate if not stored
+        if not metadata.difficulty_score:
+            metadata.difficulty_score = metadata.calculated_difficulty_score
+        return metadata
 
 
 @dataclass
@@ -95,6 +116,19 @@ class Task:
 
     # SWE-bench specific (optional)
     swe_metadata: SWEMetadata | None = None
+
+    @property
+    def difficulty_score(self) -> int:
+        """Get numeric difficulty score for sorting.
+
+        For SWE tasks: uses SWEMetadata.difficulty_score
+        For other tasks: maps difficulty string to score (easy=10, medium=50, hard=100)
+        """
+        if self.swe_metadata and self.swe_metadata.difficulty_score:
+            return self.swe_metadata.difficulty_score
+        # Fallback for non-SWE tasks
+        difficulty_map = {"easy": 10, "medium": 50, "hard": 100}
+        return difficulty_map.get(self.difficulty, 50)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""

@@ -27,6 +27,20 @@ import json
 from pathlib import Path
 
 
+def calculate_difficulty_score(gold_patch: str, fail_to_pass: list, pass_to_pass: list) -> int:
+    """Calculate difficulty score from patch size and test counts.
+
+    Formula: patch_lines + fail_to_pass_count * 5 + pass_to_pass_count * 0.1
+    - Patch lines: Direct measure of change complexity
+    - Fail to pass: Tests to fix (weighted heavily)
+    - Pass to pass: Regression risk (low weight)
+    """
+    patch_lines = len(gold_patch.splitlines()) if gold_patch else 0
+    fail_count = len(fail_to_pass)
+    pass_count = len(pass_to_pass)
+    return int(patch_lines + fail_count * 5 + pass_count * 0.1)
+
+
 def convert_instance(instance: dict) -> dict:
     """Convert a SWE-bench instance to invar-benchmark task format."""
     instance_id = instance["instance_id"]
@@ -46,6 +60,11 @@ def convert_instance(instance: dict) -> dict:
         pass_to_pass = json.loads(instance.get("PASS_TO_PASS", "[]"))
     except (json.JSONDecodeError, TypeError):
         pass_to_pass = []
+
+    gold_patch = instance.get("patch", "")
+
+    # Calculate difficulty score
+    difficulty_score = calculate_difficulty_score(gold_patch, fail_to_pass, pass_to_pass)
 
     # Build prompt
     prompt = f"""Fix the following issue in the {repo} repository.
@@ -81,11 +100,12 @@ The fix should be minimal and focused on the issue described.
             "repo": repo,
             "base_commit": instance.get("base_commit", ""),
             "test_patch": instance.get("test_patch", ""),
-            "gold_patch": instance.get("patch", ""),
+            "gold_patch": gold_patch,
             "fail_to_pass": fail_to_pass,
             "pass_to_pass": pass_to_pass,
             "version": instance.get("version", ""),
             "environment_setup_commit": instance.get("environment_setup_commit", ""),
+            "difficulty_score": difficulty_score,
         },
     }
 

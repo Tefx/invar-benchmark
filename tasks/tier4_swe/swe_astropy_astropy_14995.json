@@ -204,6 +204,7 @@
       "astropy/nddata/mixins/tests/test_ndarithmetic.py::test_raise_method_not_supported"
     ],
     "version": "5.2",
-    "environment_setup_commit": "362f6df12abf9bd769d4915fabf955c993ea22cf"
+    "environment_setup_commit": "362f6df12abf9bd769d4915fabf955c993ea22cf",
+    "difficulty_score": 38
   }
 }
