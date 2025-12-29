@@ -136,6 +136,10 @@ from core.{module_name} import *
     test_code = re.sub(r'class \w+Test\(\w*\):', '', test_code)
     test_code = re.sub(r'\bself\.\b', '', test_code)
 
+    # Remove self parameter from function definitions
+    test_code = re.sub(r'def (test_\w+)\(self\):', r'def \1():', test_code)
+    test_code = re.sub(r'def (test_\w+)\(self,\s*', r'def \1(', test_code)
+
     # Fix indentation (remove one level)
     lines = test_code.split('\n')
     fixed_lines = []
