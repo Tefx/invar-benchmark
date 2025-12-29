@@ -13,11 +13,33 @@ _invar:
 
 ## Entry Actions (REQUIRED)
 
+### Check-In (DX-54)
+
+Your **first message** MUST display:
+
+```
+✓ Check-In: [project] | [branch] | [clean/dirty]
+```
+
+Actions:
+1. Read `.invar/context.md` (Key Rules + Current State + Lessons Learned)
+2. Show one-line status
+
+**Do NOT execute guard or map at Check-In.**
+Guard is for VALIDATE phase and Final only.
+
+This is your sign-in. The user sees it immediately.
+No visible check-in = Session not started.
+
 ### Context Refresh (DX-54)
 
-Before any workflow action:
-1. Read `.invar/context.md` (especially Key Rules section)
-2. Display routing announcement
+Re-read `.invar/context.md` when:
+1. Entering any workflow (/develop, /review, etc.)
+2. Completing a TodoWrite task (before moving to next)
+3. Conversation exceeds ~15-20 exchanges
+4. Unsure about project rules or patterns
+
+**Refresh is transparent** — do not announce "I'm refreshing context."
 
 ### Routing Announcement
 
