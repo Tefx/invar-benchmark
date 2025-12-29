@@ -263,12 +263,6 @@ class BenchmarkRunner:
                     # NATURAL ROUTING: Let CLAUDE.md routing rules activate skills
                     # Task prompts should contain trigger words: "Implement", "Add", "Fix"
                     # This tests REAL framework effectiveness (fair benchmark)
-                    # BM-07: Add system prompt reminder to invoke Skill tool
-                    cmd.extend([
-                        "--append-system-prompt",
-                        "IMPORTANT: After Check-In, you MUST call Skill(skill=\"develop\") "
-                        "for implementation tasks. Do NOT skip this step."
-                    ])
                     full_prompt = task.prompt
                 elif use_interactive:
                     # FORCED INTERACTIVE: Explicit /develop trigger (debugging only)
