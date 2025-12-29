@@ -35,9 +35,9 @@ from harness.collector import MetricsCollector
 # ProgressDisplay imported lazily in _run_with_rich_display to avoid rich dependency
 # for simple commands like --check-docker
 
-# USBV Skill prefix for treatment group prompts
-# Embeds key /develop skill guidance directly in prompt
-USBV_SKILL_PREFIX = """# Development Instructions (USBV Workflow)
+# USBV Skill prefix for treatment group prompts (PRINT MODE)
+# Embeds key /develop skill guidance directly in prompt since Skill tool unavailable
+USBV_SKILL_PREFIX_PRINT = """# Development Instructions (USBV Workflow)
 
 Follow this workflow:
 1. UNDERSTAND: What needs to be done? Check existing code structure.
@@ -67,6 +67,13 @@ Core functions go in src/core/ with @pre/@post.
 Shell functions go in src/shell/ with Result[T, E] return type.
 
 ---
+Task:
+"""
+
+# Skill trigger prefix for treatment group prompts (INTERACTIVE MODE)
+# Uses trigger words to activate routing rules in CLAUDE.md → invokes /develop skill
+USBV_SKILL_PREFIX_INTERACTIVE = """Implement the following task using the /develop skill workflow.
+
 Task:
 """
 
@@ -193,9 +200,14 @@ class BenchmarkRunner:
                 if mcp_config:
                     cmd.extend(["--mcp-config", json.dumps(mcp_config)])
 
-            # Build prompt with USBV skill prefix for treatment group
+            # Build prompt with appropriate prefix for treatment group
             if group == ExperimentGroup.TREATMENT:
-                full_prompt = USBV_SKILL_PREFIX + task.prompt
+                if use_interactive:
+                    # Interactive mode: Use skill trigger to invoke /develop via Skill tool
+                    full_prompt = USBV_SKILL_PREFIX_INTERACTIVE + task.prompt
+                else:
+                    # Print mode: Embed full USBV guidance (no Skill tool available)
+                    full_prompt = USBV_SKILL_PREFIX_PRINT + task.prompt
             else:
                 full_prompt = task.prompt
 
