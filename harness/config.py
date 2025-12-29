@@ -40,7 +40,7 @@ class BenchmarkConfig:
 
     # SWE-bench settings (BM-03)
     use_repo_cache: bool = True  # Cache bare repos for faster subsequent runs
-    use_docker: bool = False  # Use Docker for SWE task execution
+    use_docker: bool = True  # Use Docker for SWE task execution (required for correct Python version)
     docker_timeout: int = 1800  # Docker evaluation timeout in seconds
 
     @property

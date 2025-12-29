@@ -55,3 +55,4 @@ htmlcov/
 *.temp
 *.jsonl
 *.invar-eval.json
+.env

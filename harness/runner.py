@@ -438,8 +438,14 @@ class BenchmarkRunner:
         output_chunks: list[str] = []
         start_time = time.time()
         last_output_time = time.time()
+        last_llm_check_time = 0.0  # Rate limit LLM calls
         recent_buffer = ""  # Buffer for pattern detection
         waiting_for_input = False  # Flag for cursor-based detection
+
+        # LLM-based detection (primary if available)
+        from harness.llm_detector import detect_waiting_state, is_llm_detection_available
+        use_llm = is_llm_detection_available()
+        LLM_CHECK_INTERVAL = 3.0  # Minimum seconds between LLM calls
 
         # Patterns indicating Claude CLI is waiting for user input
         # [?25h = ANSI "show cursor" - emitted when CLI waits for input
@@ -491,15 +497,27 @@ class BenchmarkRunner:
                     # No output received this cycle
                     if waiting_for_input and process.poll() is None:
                         idle_time = time.time() - last_output_time
+                        current_time = time.time()
 
-                        # Primary: pattern-based detection (cursor + waiting patterns)
+                        # Primary: LLM-based semantic detection (if available)
+                        if use_llm and (current_time - last_llm_check_time) >= LLM_CHECK_INTERVAL:
+                            last_llm_check_time = current_time
+                            is_waiting, response = detect_waiting_state(recent_buffer)
+                            if is_waiting and response:
+                                os.write(master, (response + "\n").encode())
+                                waiting_for_input = False
+                                recent_buffer = ""
+                                last_output_time = current_time
+                                continue
+
+                        # Fallback 1: pattern-based detection (cursor + waiting patterns)
                         has_waiting_pattern = any(p in recent_buffer for p in WAITING_PATTERNS)
                         if has_waiting_pattern:
                             os.write(master, b"continue\n")
                             waiting_for_input = False
                             recent_buffer = ""
                             last_output_time = time.time()
-                        # Fallback: long idle with cursor shown (pattern might be missing)
+                        # Fallback 2: long idle with cursor shown (pattern might be missing)
                         elif idle_time > IDLE_FALLBACK_THRESHOLD:
                             os.write(master, b"continue\n")
                             waiting_for_input = False
