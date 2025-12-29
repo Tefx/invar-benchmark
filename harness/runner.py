@@ -32,6 +32,7 @@ from harness.models import (
     TaskTier,
 )
 from harness.collector import MetricsCollector
+from harness.conversation_parser import parse_workspace_conversation
 
 # ProgressDisplay imported lazily in _run_with_rich_display to avoid rich dependency
 # for simple commands like --check-docker
@@ -305,6 +306,9 @@ class BenchmarkRunner:
                 result.end_time - result.start_time
             ).total_seconds()
 
+            # Parse Claude's JSONL logs for accurate metrics (BM-04 fix)
+            self._parse_conversation_logs(workspace, result)
+
         except subprocess.TimeoutExpired:
             result.status = TaskStatus.TIMEOUT
             result.error_message = f"Task timed out after {self.config.timeout_seconds}s"
@@ -576,6 +580,59 @@ class BenchmarkRunner:
             files[str(relative_path)] = py_file.read_text()
 
         return files
+
+    def _parse_conversation_logs(self, workspace: Path, result: TaskResult) -> None:
+        """
+        Parse Claude's JSONL conversation logs for accurate metrics.
+
+        This extracts real token counts, tool usage, and Invar protocol
+        adherence from Claude's stored conversation logs.
+
+        Args:
+            workspace: Task workspace directory
+            result: TaskResult to update with accurate metrics
+        """
+        try:
+            # Use task start/end times to find the correct conversation file
+            start_time = result.start_time.isoformat() if result.start_time else None
+            end_time = result.end_time.isoformat() if result.end_time else None
+
+            conv_metrics = parse_workspace_conversation(workspace, start_time, end_time)
+            if conv_metrics is None:
+                return
+
+            # Update token counts (override PTY estimates with accurate values)
+            result.metrics.input_tokens = conv_metrics.input_tokens
+            result.metrics.output_tokens = conv_metrics.output_tokens
+            result.metrics.cache_creation_tokens = conv_metrics.cache_creation_tokens
+            result.metrics.cache_read_tokens = conv_metrics.cache_read_tokens
+            result.metrics.total_tokens = conv_metrics.total_tokens
+
+            # Update conversation stats
+            result.metrics.assistant_messages = conv_metrics.assistant_messages
+            result.metrics.user_messages = conv_metrics.user_messages
+            result.metrics.iterations = conv_metrics.assistant_messages  # Use assistant count as iterations
+
+            # Update tool usage
+            result.metrics.total_tool_calls = conv_metrics.total_tool_calls
+            result.metrics.mcp_calls = conv_metrics.total_mcp_calls
+            result.metrics.skill_calls = conv_metrics.skill_calls
+            result.metrics.tool_breakdown = conv_metrics.tool_uses
+
+            # Update Invar protocol adherence
+            result.metrics.has_checkin = conv_metrics.has_checkin
+            result.metrics.has_final = conv_metrics.has_final
+            result.metrics.final_status = conv_metrics.final_status
+
+            # Update conversation API stats
+            result.api_input_tokens = conv_metrics.input_tokens
+            result.api_output_tokens = conv_metrics.output_tokens
+            result.total_turns = conv_metrics.total_turns
+
+        except Exception as e:
+            # Log error but don't fail the task
+            if not getattr(self, '_quiet', False):
+                print(f"  Warning: Failed to parse conversation logs: {e}")
 
     def run_experiment(
         self,
@@ -926,8 +983,19 @@ def _print_simple_summary(summary: dict) -> None:
             print(f"  Completed: {stats['completed']}/{stats['total_tasks']}")
             print(f"  Avg Test Pass Rate: {stats['avg_test_pass_rate']:.1%}")
             print(f"  Avg Hidden Test Rate: {stats['avg_hidden_test_pass_rate']:.1%}")
+            print(f"  Avg Exec Time: {stats.get('avg_execution_time', 0):.0f}s")
+            print(f"  Total Time: {stats.get('total_execution_time', 0):.0f}s")
             print(f"  Avg Iterations: {stats['avg_iterations']:.1f}")
             print(f"  Avg Tokens: {stats['avg_tokens']:.0f}")
+            print(f"  Avg Tool Calls: {stats.get('avg_tool_calls', 0):.0f}")
+            if stats.get('avg_mcp_calls', 0) > 0:
+                print(f"  Avg MCP Calls: {stats['avg_mcp_calls']:.1f}")
+            if stats.get('avg_skill_calls', 0) > 0:
+                print(f"  Avg Skill Calls: {stats['avg_skill_calls']:.1f}")
+            if stats.get('checkin_rate', 0) > 0:
+                print(f"  Check-In Rate: {stats['checkin_rate']:.0%}")
+            if stats.get('final_pass_rate', 0) > 0:
+                print(f"  Final PASS Rate: {stats['final_pass_rate']:.0%}")
 
 
 def _print_rich_summary(summary: dict) -> None:
@@ -963,6 +1031,12 @@ def _print_rich_summary(summary: dict) -> None:
         sign = "+" if delta > 0 else ""
         return f"[{color}]{sign}{pct:.1f}%[/{color}]"
 
+    def format_time(seconds: float) -> str:
+        if seconds < 60:
+            return f"{seconds:.0f}s"
+        minutes = seconds / 60
+        return f"{minutes:.1f}m"
+
     if control and treatment:
         # Completed
         table.add_row(
@@ -992,6 +1066,26 @@ def _print_rich_summary(summary: dict) -> None:
             format_delta(c_hidden, t_hidden, higher_is_better=True),
         )
 
+        # Execution Time (new)
+        c_time = control.get("avg_execution_time", 0)
+        t_time = treatment.get("avg_execution_time", 0)
+        table.add_row(
+            "Avg Exec Time",
+            format_time(c_time),
+            format_time(t_time),
+            format_delta(c_time, t_time, higher_is_better=False),
+        )
+
+        # Total Time (new)
+        c_total_time = control.get("total_execution_time", 0)
+        t_total_time = treatment.get("total_execution_time", 0)
+        table.add_row(
+            "Total Time",
+            format_time(c_total_time),
+            format_time(t_total_time),
+            format_delta(c_total_time, t_total_time, higher_is_better=False),
+        )
+
         # Iterations
         c_iter = control.get("avg_iterations", 0)
         t_iter = treatment.get("avg_iterations", 0)
@@ -1011,6 +1105,60 @@ def _print_rich_summary(summary: dict) -> None:
             f"{t_tokens:.0f}",
             format_delta(c_tokens, t_tokens, higher_is_better=False),
         )
+
+        # Tool Calls (new)
+        c_tools = control.get("avg_tool_calls", 0)
+        t_tools = treatment.get("avg_tool_calls", 0)
+        table.add_row(
+            "Avg Tool Calls",
+            f"{c_tools:.0f}",
+            f"{t_tools:.0f}",
+            "[dim]--[/dim]",  # No delta judgment
+        )
+
+        # MCP Calls (new) - only show if treatment has any
+        t_mcp = treatment.get("avg_mcp_calls", 0)
+        if t_mcp > 0:
+            c_mcp = control.get("avg_mcp_calls", 0)
+            table.add_row(
+                "Avg MCP Calls",
+                f"{c_mcp:.0f}",
+                f"[green]{t_mcp:.1f}[/green]",
+                "[dim]--[/dim]",
+            )
+
+        # Skill Calls (new) - only show if treatment has any
+        t_skill = treatment.get("avg_skill_calls", 0)
+        if t_skill > 0:
+            c_skill = control.get("avg_skill_calls", 0)
+            table.add_row(
+                "Avg Skill Calls",
+                f"{c_skill:.0f}",
+                f"[green]{t_skill:.1f}[/green]",
+                "[dim]--[/dim]",
+            )
+
+        # Invar Protocol (new) - Check-In rate
+        c_checkin = control.get("checkin_rate", 0)
+        t_checkin = treatment.get("checkin_rate", 0)
+        if t_checkin > 0 or c_checkin > 0:
+            table.add_row(
+                "Check-In Rate",
+                f"{c_checkin:.0%}",
+                f"{t_checkin:.0%}",
+                format_delta(c_checkin, t_checkin, higher_is_better=True),
+            )
+
+        # Final Pass Rate (new)
+        c_final = control.get("final_pass_rate", 0)
+        t_final = treatment.get("final_pass_rate", 0)
+        if t_final > 0 or c_final > 0:
+            table.add_row(
+                "Final PASS Rate",
+                f"{c_final:.0%}",
+                f"{t_final:.0%}",
+                format_delta(c_final, t_final, higher_is_better=True),
+            )
 
     console.print()
     console.print(table)

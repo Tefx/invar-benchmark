@@ -182,6 +182,10 @@ class TaskMetrics:
     output_tokens: int = 0
     execution_time_seconds: float = 0.0
 
+    # Cache tokens (from Claude JSONL logs)
+    cache_creation_tokens: int = 0
+    cache_read_tokens: int = 0
+
     # Quality metrics
     tests_passed: int = 0
     tests_failed: int = 0
@@ -198,6 +202,21 @@ class TaskMetrics:
     # Code quality
     lines_of_code: int = 0
     cyclomatic_complexity: float = 0.0
+
+    # Tool usage (from Claude JSONL logs)
+    total_tool_calls: int = 0
+    mcp_calls: int = 0
+    skill_calls: int = 0
+    tool_breakdown: dict[str, int] = field(default_factory=dict)
+
+    # Invar protocol adherence
+    has_checkin: bool = False
+    has_final: bool = False
+    final_status: str = ""  # "PASS" or "FAIL"
+
+    # Conversation stats
+    assistant_messages: int = 0
+    user_messages: int = 0
 
     @property
     def test_pass_rate(self) -> float:
@@ -283,6 +302,8 @@ class TaskResult:
                 "input_tokens": self.metrics.input_tokens,
                 "output_tokens": self.metrics.output_tokens,
                 "execution_time_seconds": self.metrics.execution_time_seconds,
+                "cache_creation_tokens": self.metrics.cache_creation_tokens,
+                "cache_read_tokens": self.metrics.cache_read_tokens,
                 "tests_passed": self.metrics.tests_passed,
                 "tests_failed": self.metrics.tests_failed,
                 "tests_total": self.metrics.tests_total,
@@ -294,6 +315,18 @@ class TaskResult:
                 "has_contracts": self.metrics.has_contracts,
                 "lines_of_code": self.metrics.lines_of_code,
                 "cyclomatic_complexity": self.metrics.cyclomatic_complexity,
+                # Tool usage from Claude JSONL logs
+                "total_tool_calls": self.metrics.total_tool_calls,
+                "mcp_calls": self.metrics.mcp_calls,
+                "skill_calls": self.metrics.skill_calls,
+                "tool_breakdown": self.metrics.tool_breakdown,
+                # Invar protocol adherence
+                "has_checkin": self.metrics.has_checkin,
+                "has_final": self.metrics.has_final,
+                "final_status": self.metrics.final_status,
+                # Conversation stats
+                "assistant_messages": self.metrics.assistant_messages,
+                "user_messages": self.metrics.user_messages,
             },
             # Structured conversation data
             "conversation": {
@@ -357,6 +390,39 @@ class ExperimentResult:
                 ),
                 "avg_tokens": (
                     sum(r.metrics.total_tokens for r in completed) / len(completed)
+                    if completed else 0.0
+                ),
+                # New metrics: time, MCP, Skills
+                "avg_execution_time": (
+                    sum(r.metrics.execution_time_seconds for r in completed) / len(completed)
+                    if completed else 0.0
+                ),
+                "total_execution_time": (
+                    sum(r.metrics.execution_time_seconds for r in completed)
+                ),
+                "avg_mcp_calls": (
+                    sum(r.metrics.mcp_calls for r in completed) / len(completed)
+                    if completed else 0.0
+                ),
+                "avg_skill_calls": (
+                    sum(r.metrics.skill_calls for r in completed) / len(completed)
+                    if completed else 0.0
+                ),
+                "avg_tool_calls": (
+                    sum(r.metrics.total_tool_calls for r in completed) / len(completed)
+                    if completed else 0.0
+                ),
+                # Invar protocol adherence
+                "checkin_rate": (
+                    sum(1 for r in completed if r.metrics.has_checkin) / len(completed)
+                    if completed else 0.0
+                ),
+                "final_rate": (
+                    sum(1 for r in completed if r.metrics.has_final) / len(completed)
+                    if completed else 0.0
+                ),
+                "final_pass_rate": (
+                    sum(1 for r in completed if r.metrics.final_status == "PASS") / len(completed)
                     if completed else 0.0
                 ),
             }
