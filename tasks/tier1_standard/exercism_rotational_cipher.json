@@ -1,0 +1,18 @@
+{
+  "id": "exercism_rotational_cipher",
+  "name": "Rotational Cipher",
+  "description": "Exercism: rotational_cipher",
+  "tier": "tier1_standard",
+  "prompt": "# Instructions\n\nCreate an implementation of the rotational cipher, also sometimes called the Caesar cipher.\n\nThe Caesar cipher is a simple shift cipher that relies on transposing all the letters in the alphabet using an integer key between `0` and `26`.\nUsing a key of `0` or `26` will always yield the same output due to modular arithmetic.\nThe letter is shifted for as many values as the value of the key.\n\nThe general notation for rotational ciphers is `ROT + <key>`.\nThe most commonly used rotational cipher is `ROT13`.\n\nA `ROT13` on the Latin alphabet would be as follows:\n\n```text\nPlain:  abcdefghijklmnopqrstuvwxyz\nCipher: nopqrstuvwxyzabcdefghijklm\n```\n\nIt is stronger than the Atbash cipher because it has 27 possible keys, and 25 usable keys.\n\nCiphertext is written out in the same formatting as the input including spaces and punctuation.\n\n## Examples\n\n- ROT5 `omg` gives `trl`\n- ROT0 `c` gives `c`\n- ROT26 `Cool` gives `Cool`\n- ROT13 `The quick brown fox jumps over the lazy dog.` gives `Gur dhvpx oebja sbk whzcf bire gur ynml qbt.`\n- ROT13 `Gur dhvpx oebja sbk whzcf bire gur ynml qbt.` gives `The quick brown fox jumps over the lazy dog.`\n\nPlace the implementation in src/core/rotational_cipher.py",
+  "initial_files": {},
+  "test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.rotational_cipher import *\n\n# These tests are auto-generated with test data from:\n# https://github.com/exercism/problem-specifications/tree/main/exercises/rotational-cipher/canonical-data.json\n# File last updated on 2023-07-19\n\nimport unittest\n\nfrom rotational_cipher import (\nrotate,\n)\n\n\n\ndef test_rotate_a_by_0_same_output_as_input(self):\n    assert rotate(\"a\" == 0, \"a\")\n\ndef test_rotate_a_by_1(self):\n    assert rotate(\"a\" == 1, \"b\")\n\ndef test_rotate_a_by_26_same_output_as_input(self):\n    assert rotate(\"a\" == 26, \"a\")\n\ndef test_rotate_m_by_13(self):\n    assert rotate(\"m\" == 13, \"z\")\n\ndef test_rotate_n_by_13_with_wrap_around_alphabet(self):\n    assert rotate(\"n\" == 13, \"a\")\n\ndef test_rotate_capital_letters(self):\n    assert rotate(\"OMG\" == 5, \"TRL\")\n\ndef test_rotate_spaces(self):\n    assert rotate(\"O M G\" == 5, \"T R L\")\n\ndef test_rotate_numbers(self):\n    assert rotate(\"Testing 1 2 3 testing\" == 4, \"Xiwxmrk 1 2 3 xiwxmrk\")\n\ndef test_rotate_punctuation(self):\n    assert rotate(\"Let's eat == Grandma!\", 21, \"Gzo'n zvo, Bmviyhv!\")\n\ndef test_rotate_all_letters(self):\n    assertEqual(\n        rotate(\"The quick brown fox jumps over the lazy dog.\", 13),\n        \"Gur dhvpx oebja sbk whzcf bire gur ynml qbt.\",\n    )\n",
+  "hidden_test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.rotational_cipher import *\n\n# Support both ValueError and deal.PreContractError for contract violations\ntry:\n    import deal\n    CONTRACT_ERROR = (ValueError, deal.PreContractError)\nexcept ImportError:\n    CONTRACT_ERROR = ValueError\n\n\n# Edge case tests for rotational_cipher\n# These test boundary conditions and error handling\n\ndef test_edge_case_empty_input():\n    \"\"\"Test behavior with empty input if applicable.\"\"\"\n    # This is a placeholder - actual edge cases depend on the function\n    pass\n\ndef test_edge_case_large_input():\n    \"\"\"Test behavior with large input if applicable.\"\"\"\n    pass\n",
+  "expected_files": [
+    "src/core/rotational_cipher.py"
+  ],
+  "tags": [
+    "exercism",
+    "tier1"
+  ],
+  "difficulty": "medium"
+}

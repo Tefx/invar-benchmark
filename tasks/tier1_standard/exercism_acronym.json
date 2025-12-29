@@ -1,0 +1,18 @@
+{
+  "id": "exercism_acronym",
+  "name": "Acronym",
+  "description": "Exercism: acronym",
+  "tier": "tier1_standard",
+  "prompt": "# Instructions\n\nConvert a phrase to its acronym.\n\nTechies love their TLA (Three Letter Acronyms)!\n\nHelp generate some jargon by writing a program that converts a long name like Portable Network Graphics to its acronym (PNG).\n\nPunctuation is handled as follows: hyphens are word separators (like whitespace); all other punctuation can be removed from the input.\n\nFor example:\n\n| Input                     | Output |\n| ------------------------- | ------ |\n| As Soon As Possible       | ASAP   |\n| Liquid-crystal display    | LCD    |\n| Thank George It's Friday! | TGIF   |\n\nPlace the implementation in src/core/acronym.py",
+  "initial_files": {},
+  "test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.acronym import *\n\n# These tests are auto-generated with test data from:\n# https://github.com/exercism/problem-specifications/tree/main/exercises/acronym/canonical-data.json\n# File last updated on 2023-07-20\n\nimport unittest\n\nfrom acronym import (\nabbreviate,\n)\n\n\n\ndef test_basic(self):\n    assert abbreviate(\"Portable Network Graphics\") == \"PNG\"\n\ndef test_lowercase_words(self):\n    assert abbreviate(\"Ruby on Rails\") == \"ROR\"\n\ndef test_punctuation(self):\n    assert abbreviate(\"First In == First Out\", \"FIFO\")\n\ndef test_all_caps_word(self):\n    assert abbreviate(\"GNU Image Manipulation Program\") == \"GIMP\"\n\ndef test_punctuation_without_whitespace(self):\n    assert abbreviate(\"Complementary metal-oxide semiconductor\") == \"CMOS\"\n\ndef test_very_long_abbreviation(self):\n    assertEqual(\n        abbreviate(\n            \"Rolling On The Floor Laughing So Hard That My Dogs Came Over And Licked Me\"\n        ),\n        \"ROTFLSHTMDCOALM\",\n    )\n\ndef test_consecutive_delimiters(self):\n    assert abbreviate(\"Something - I made up from thin air\") == \"SIMUFTA\"\n\ndef test_apostrophes(self):\n    assert abbreviate(\"Halley's Comet\") == \"HC\"\n\ndef test_underscore_emphasis(self):\n    assert abbreviate(\"The Road _Not_ Taken\") == \"TRNT\"\n",
+  "hidden_test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.acronym import *\n\n# Support both ValueError and deal.PreContractError for contract violations\ntry:\n    import deal\n    CONTRACT_ERROR = (ValueError, deal.PreContractError)\nexcept ImportError:\n    CONTRACT_ERROR = ValueError\n\n\n# Edge case tests for acronym\n# These test boundary conditions and error handling\n\ndef test_edge_case_empty_input():\n    \"\"\"Test behavior with empty input if applicable.\"\"\"\n    # This is a placeholder - actual edge cases depend on the function\n    pass\n\ndef test_edge_case_large_input():\n    \"\"\"Test behavior with large input if applicable.\"\"\"\n    pass\n",
+  "expected_files": [
+    "src/core/acronym.py"
+  ],
+  "tags": [
+    "exercism",
+    "tier1"
+  ],
+  "difficulty": "medium"
+}

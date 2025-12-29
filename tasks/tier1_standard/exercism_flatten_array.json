@@ -1,0 +1,18 @@
+{
+  "id": "exercism_flatten_array",
+  "name": "Flatten Array",
+  "description": "Exercism: flatten_array",
+  "tier": "tier1_standard",
+  "prompt": "# Instructions\n\nTake a nested list and return a single flattened list with all values except nil/null.\n\nThe challenge is to take an arbitrarily-deep nested list-like structure and produce a flattened structure without any nil/null values.\n\nFor example:\n\ninput: [1,[2,3,null,4],[null],5]\n\noutput: [1,2,3,4,5]\n\nPlace the implementation in src/core/flatten_array.py",
+  "initial_files": {},
+  "test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.flatten_array import *\n\n# These tests are auto-generated with test data from:\n# https://github.com/exercism/problem-specifications/tree/main/exercises/flatten-array/canonical-data.json\n# File last updated on 2023-07-19\n\nimport unittest\n\nfrom flatten_array import (\nflatten,\n)\n\n\n\ndef test_empty(self):\n    inputs = []\n    expected = []\n    assert flatten(inputs) == expected\n\ndef test_no_nesting(self):\n    inputs = [0, 1, 2]\n    expected = [0, 1, 2]\n    assert flatten(inputs) == expected\n\ndef test_flattens_a_nested_array(self):\n    inputs = [[[]]]\n    expected = []\n    assert flatten(inputs) == expected\n\ndef test_flattens_array_with_just_integers_present(self):\n    inputs = [1, [2, 3, 4, 5, 6, 7], 8]\n    expected = [1, 2, 3, 4, 5, 6, 7, 8]\n    assert flatten(inputs) == expected\n\ndef test_5_level_nesting(self):\n    inputs = [0, 2, [[2, 3], 8, 100, 4, [[[50]]]], -2]\n    expected = [0, 2, 2, 3, 8, 100, 4, 50, -2]\n    assert flatten(inputs) == expected\n\ndef test_6_level_nesting(self):\n    inputs = [1, [2, [[3]], [4, [[5]]], 6, 7], 8]\n    expected = [1, 2, 3, 4, 5, 6, 7, 8]\n    assert flatten(inputs) == expected\n\ndef test_null_values_are_omitted_from_the_final_result(self):\n    inputs = [1, 2, None]\n    expected = [1, 2]\n    assert flatten(inputs) == expected\n\ndef test_consecutive_null_values_at_the_front_of_the_list_are_omitted_from_the_final_result(\n    self,\n):\n    inputs = [None, None, 3]\n    expected = [3]\n    assert flatten(inputs) == expected\n\ndef test_consecutive_null_values_in_the_middle_of_the_list_are_omitted_from_the_final_result(\n    self,\n):\n    inputs = [1, None, None, 4]\n    expected = [1, 4]\n    assert flatten(inputs) == expected\n\ndef test_6_level_nest_list_with_null_values(self):\n    inputs = [0, 2, [[2, 3], 8, [[100]], None, [[None]]], -2]\n    expected = [0, 2, 2, 3, 8, 100, -2]\n    assert flatten(inputs) == expected\n\ndef test_all_values_in_nested_list_are_null(self):\n    inputs = [None, [[[None]]], None, None, [[None, None], None], None]\n    expected = []\n    assert flatten(inputs) == expected\n",
+  "hidden_test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.flatten_array import *\n\n# Support both ValueError and deal.PreContractError for contract violations\ntry:\n    import deal\n    CONTRACT_ERROR = (ValueError, deal.PreContractError)\nexcept ImportError:\n    CONTRACT_ERROR = ValueError\n\n\n# Edge case tests for flatten_array\n# These test boundary conditions and error handling\n\ndef test_edge_case_empty_input():\n    \"\"\"Test behavior with empty input if applicable.\"\"\"\n    # This is a placeholder - actual edge cases depend on the function\n    pass\n\ndef test_edge_case_large_input():\n    \"\"\"Test behavior with large input if applicable.\"\"\"\n    pass\n",
+  "expected_files": [
+    "src/core/flatten_array.py"
+  ],
+  "tags": [
+    "exercism",
+    "tier1"
+  ],
+  "difficulty": "hard"
+}

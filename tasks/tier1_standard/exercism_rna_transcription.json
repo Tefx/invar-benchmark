@@ -1,0 +1,18 @@
+{
+  "id": "exercism_rna_transcription",
+  "name": "Rna Transcription",
+  "description": "Exercism: rna_transcription",
+  "tier": "tier1_standard",
+  "prompt": "# Introduction\n\nYou work for a bioengineering company that specializes in developing therapeutic solutions.\n\nYour team has just been given a new project to develop a targeted therapy for a rare type of cancer.\n\n~~~~exercism/note\nIt's all very complicated, but the basic idea is that sometimes people's bodies produce too much of a given protein.\nThat can cause all sorts of havoc.\n\nBut if you can create a very specific molecule (called a micro-RNA), it can prevent the protein from being produced.\n\nThis technique is called [RNA Interference][rnai].\n\n[rnai]: https://admin.acceleratingscience.com/ask-a-scientist/what-is-rnai/\n~~~~\n# Instructions\n\nYour task is determine the RNA complement of a given DNA sequence.\n\nBoth DNA and RNA strands are a sequence of nucleotides.\n\nThe four nucleotides found in DNA are adenine (**A**), cytosine (**C**), guanine (**G**) and thymine (**T**).\n\nThe four nucleotides found in RNA are adenine (**A**), cytosine (**C**), guanine (**G**) and uracil (**U**).\n\nGiven a DNA strand, its transcribed RNA strand is formed by replacing each nucleotide with its complement:\n\n- `G` -> `C`\n- `C` -> `G`\n- `T` -> `A`\n- `A` -> `U`\n\n~~~~exercism/note\nIf you want to look at how the inputs and outputs are structured, take a look at the examples in the test suite.\n~~~~\n\nPlace the implementation in src/core/rna_transcription.py",
+  "initial_files": {},
+  "test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.rna_transcription import *\n\n# These tests are auto-generated with test data from:\n# https://github.com/exercism/problem-specifications/tree/main/exercises/rna-transcription/canonical-data.json\n# File last updated on 2023-07-19\n\nimport unittest\n\nfrom rna_transcription import (\nto_rna,\n)\n\n\n\ndef test_empty_rna_sequence(self):\n    assert to_rna(\"\") == \"\"\n\ndef test_rna_complement_of_cytosine_is_guanine(self):\n    assert to_rna(\"C\") == \"G\"\n\ndef test_rna_complement_of_guanine_is_cytosine(self):\n    assert to_rna(\"G\") == \"C\"\n\ndef test_rna_complement_of_thymine_is_adenine(self):\n    assert to_rna(\"T\") == \"A\"\n\ndef test_rna_complement_of_adenine_is_uracil(self):\n    assert to_rna(\"A\") == \"U\"\n\ndef test_rna_complement(self):\n    assert to_rna(\"ACGTGGTCTTAA\") == \"UGCACCAGAAUU\"\n",
+  "hidden_test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.rna_transcription import *\n\n# Support both ValueError and deal.PreContractError for contract violations\ntry:\n    import deal\n    CONTRACT_ERROR = (ValueError, deal.PreContractError)\nexcept ImportError:\n    CONTRACT_ERROR = ValueError\n\n\n# Edge case tests for rna_transcription\n# These test boundary conditions and error handling\n\ndef test_edge_case_empty_input():\n    \"\"\"Test behavior with empty input if applicable.\"\"\"\n    # This is a placeholder - actual edge cases depend on the function\n    pass\n\ndef test_edge_case_large_input():\n    \"\"\"Test behavior with large input if applicable.\"\"\"\n    pass\n",
+  "expected_files": [
+    "src/core/rna_transcription.py"
+  ],
+  "tags": [
+    "exercism",
+    "tier1"
+  ],
+  "difficulty": "medium"
+}
