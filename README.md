@@ -93,6 +93,25 @@ python -m harness.runner --mode interactive --max-turns 100 --interactive-timeou
 - Auto-responds to Y/N prompts and continuation requests
 - 60s idle fallback for edge cases
 
+### Parallel Execution
+
+```bash
+# Run 2 tasks in parallel (default: sequential)
+python -m harness.runner --parallel 2
+
+# Run tier1-3 with 4 parallel tasks (no Docker, lightweight)
+python -m harness.runner --parallel 4 --tier tier1_standard
+
+# Run SWE tasks with 2 parallel (Docker resource limit)
+python -m harness.runner --parallel 2 --tier tier4_swe
+```
+
+**Recommended parallelism:**
+| Tier | Parallel | Notes |
+|------|----------|-------|
+| tier1-3 | 2-4 | No Docker, API rate limit is main constraint |
+| tier4_swe | 1-2 | Docker containers need ~4GB RAM each |
+
 ### SWE-bench Tasks
 
 ```bash
