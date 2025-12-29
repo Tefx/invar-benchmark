@@ -23,6 +23,7 @@ from harness.config import (
     clear_cache,
 )
 from harness.models import (
+    ConversationMessage,
     ExperimentGroup,
     ExperimentResult,
     Task,
@@ -198,8 +199,12 @@ class BenchmarkRunner:
                 if self.config.max_turns:
                     cmd.extend(["--max-turns", str(self.config.max_turns)])
             else:
-                # Print mode: non-interactive single-shot
-                cmd.extend(["--print", "--dangerously-skip-permissions"])
+                # Print mode: non-interactive single-shot with JSON output
+                cmd.extend([
+                    "--print",
+                    "--dangerously-skip-permissions",
+                    "--output-format", "json",  # Get structured conversation data
+                ])
 
             # MCP isolation via command-line flags (preserves auth)
             # CRIT-3 fix: Using --strict-mcp-config instead of CLAUDE_CONFIG_DIR
@@ -234,10 +239,12 @@ class BenchmarkRunner:
                     cmd, workspace, timeout
                 )
                 result.conversation_log = stdout
+                # Parse interactive output for conversation data
+                self._parse_interactive_output(stdout, result)
                 if stderr:
                     result.error_message = stderr
             else:
-                # Use subprocess for print mode
+                # Use subprocess for print mode with JSON output
                 process = subprocess.run(
                     cmd,
                     cwd=workspace,
@@ -246,6 +253,8 @@ class BenchmarkRunner:
                     timeout=self.config.timeout_seconds,
                 )
                 result.conversation_log = process.stdout
+                # Parse JSON output for structured conversation data
+                self._parse_json_output(process.stdout, result)
                 if process.stderr:
                     result.error_message = process.stderr
 
@@ -253,8 +262,9 @@ class BenchmarkRunner:
             files_dir = repo_dir if is_swe_task else workspace
             result.generated_files = self._collect_generated_files(files_dir)
 
-            # Run tests and collect metrics
-            result.metrics = self.collector.collect(
+            # Run tests and collect additional metrics
+            # Pass the pre-populated metrics (with token counts from JSON) to collector
+            collected_metrics = self.collector.collect(
                 workspace=workspace,
                 task=task,
                 group=group,
@@ -263,6 +273,17 @@ class BenchmarkRunner:
                 use_docker=self.config.use_docker,
                 docker_timeout=self.config.docker_timeout,
             )
+
+            # Merge collected metrics with pre-parsed metrics
+            # Keep token counts from JSON parsing if available
+            if result.metrics.total_tokens > 0:
+                # Preserve JSON-parsed token counts
+                collected_metrics.iterations = result.metrics.iterations
+                collected_metrics.input_tokens = result.metrics.input_tokens
+                collected_metrics.output_tokens = result.metrics.output_tokens
+                collected_metrics.total_tokens = result.metrics.total_tokens
+
+            result.metrics = collected_metrics
 
             result.status = TaskStatus.COMPLETED
             result.end_time = datetime.now()
@@ -419,6 +440,110 @@ class BenchmarkRunner:
         return_code = process.returncode or 0
 
         return return_code, output, ""
+
+    def _parse_json_output(self, stdout: str, result: TaskResult) -> None:
+        """
+        Parse Claude CLI JSON output to extract conversation data.
+
+        The JSON output format includes:
+        - messages: List of conversation messages
+        - inputTokens: Total input tokens used
+        - outputTokens: Total output tokens used
+        - costUSD: Total cost in USD
+        """
+        try:
+            data = json.loads(stdout)
+
+            # Extract conversation messages
+            messages = data.get("messages", [])
+            for msg in messages:
+                role = msg.get("role", "")
+                content = ""
+
+                # Handle different content formats
+                msg_content = msg.get("content", "")
+                if isinstance(msg_content, str):
+                    content = msg_content
+                elif isinstance(msg_content, list):
+                    # Content can be a list of blocks (text, tool_use, tool_result)
+                    text_parts = []
+                    for block in msg_content:
+                        if isinstance(block, dict):
+                            if block.get("type") == "text":
+                                text_parts.append(block.get("text", ""))
+                            elif block.get("type") == "tool_use":
+                                # Record tool use
+                                tool_name = block.get("name", "")
+                                result.conversation_messages.append(
+                                    ConversationMessage(
+                                        role="tool_use",
+                                        content=json.dumps(block.get("input", {})),
+                                        tool_name=tool_name,
+                                    )
+                                )
+                            elif block.get("type") == "tool_result":
+                                tool_id = block.get("tool_use_id", "")
+                                result.conversation_messages.append(
+                                    ConversationMessage(
+                                        role="tool_result",
+                                        content=str(block.get("content", ""))[:1000],  # Truncate
+                                        tool_name=tool_id,
+                                    )
+                                )
+                        elif isinstance(block, str):
+                            text_parts.append(block)
+                    content = "\n".join(text_parts)
+
+                if content and role in ("user", "assistant"):
+                    result.conversation_messages.append(
+                        ConversationMessage(role=role, content=content)
+                    )
+
+            # Extract token counts and cost
+            result.api_input_tokens = data.get("inputTokens", 0)
+            result.api_output_tokens = data.get("outputTokens", 0)
+            result.api_total_cost_usd = data.get("costUSD", 0.0)
+
+            # Count turns (assistant messages = turns)
+            result.total_turns = sum(
+                1 for m in result.conversation_messages if m.role == "assistant"
+            )
+
+            # Update metrics with accurate token counts
+            result.metrics.input_tokens = result.api_input_tokens
+            result.metrics.output_tokens = result.api_output_tokens
+            result.metrics.total_tokens = (
+                result.api_input_tokens + result.api_output_tokens
+            )
+            result.metrics.iterations = max(1, result.total_turns)
+
+        except json.JSONDecodeError:
+            # Not valid JSON, fall back to text parsing
+            self._parse_interactive_output(stdout, result)
+
+    def _parse_interactive_output(self, stdout: str, result: TaskResult) -> None:
+        """
+        Parse interactive mode output (PTY) to extract conversation data.
+
+        This is a fallback parser for non-JSON output.
+        """
+        # Count tool uses as a proxy for iterations
+        tool_count = stdout.count("Tool:") + stdout.count("⏺")
+
+        # Estimate tokens from output length
+        # Using rough approximation: 1 token ≈ 4 characters
+        estimated_tokens = len(stdout) // 4
+
+        result.total_turns = max(1, tool_count)
+        result.metrics.iterations = max(1, tool_count)
+        result.metrics.output_tokens = estimated_tokens
+        result.metrics.total_tokens = estimated_tokens
+
+        # Store the raw output as a single message
+        if stdout.strip():
+            result.conversation_messages.append(
+                ConversationMessage(role="assistant", content=stdout[:10000])  # Truncate
+            )
 
     def _collect_generated_files(self, workspace: Path) -> dict[str, str]:
         """Collect all generated Python files from workspace."""

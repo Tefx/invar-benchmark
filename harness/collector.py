@@ -122,22 +122,32 @@ class MetricsCollector:
         conversation_log: str,
         metrics: TaskMetrics,
     ) -> None:
-        """Parse metrics from conversation log."""
-        # Count iterations (tool calls or message exchanges)
-        # This is a simplified heuristic
-        tool_calls = conversation_log.count("Tool:")
-        metrics.iterations = max(1, tool_calls)
+        """
+        Parse metrics from conversation log.
 
-        # Token counting using tiktoken (improved from MAJ-4)
-        # Uses cl100k_base encoding for accurate token counts
-        # Falls back to chars/4 estimation if tiktoken unavailable
-        token_count, is_accurate = count_tokens(conversation_log)
-        metrics.total_tokens = token_count
-        metrics.output_tokens = token_count
+        Note: If metrics already have token counts (from JSON parsing in runner),
+        those values are preserved. This method only estimates if values are 0.
+        """
+        # Only estimate if not already set by JSON parser
+        if metrics.total_tokens == 0:
+            # Count iterations (tool calls or message exchanges)
+            # This is a simplified heuristic
+            tool_calls = conversation_log.count("Tool:") + conversation_log.count("⏺")
+            metrics.iterations = max(1, tool_calls)
 
-        # Store accuracy flag in metrics for transparency
-        # (Not persisted, but available during collection)
-        metrics._token_count_accurate = is_accurate
+            # Token counting using tiktoken (improved from MAJ-4)
+            # Uses cl100k_base encoding for accurate token counts
+            # Falls back to chars/4 estimation if tiktoken unavailable
+            token_count, is_accurate = count_tokens(conversation_log)
+            metrics.total_tokens = token_count
+            metrics.output_tokens = token_count
+
+            # Store accuracy flag in metrics for transparency
+            # (Not persisted, but available during collection)
+            metrics._token_count_accurate = is_accurate
+        else:
+            # Token counts already set by JSON parser - mark as accurate
+            metrics._token_count_accurate = True
 
     def _run_tests(
         self,

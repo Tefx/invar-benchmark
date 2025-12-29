@@ -215,6 +215,32 @@ class TaskMetrics:
 
 
 @dataclass
+class ConversationMessage:
+    """A single message in a conversation."""
+    role: str  # "user", "assistant", "tool_use", "tool_result"
+    content: str
+    tool_name: str = ""  # For tool_use/tool_result messages
+    timestamp: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        result = {"role": self.role, "content": self.content}
+        if self.tool_name:
+            result["tool_name"] = self.tool_name
+        if self.timestamp:
+            result["timestamp"] = self.timestamp
+        return result
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ConversationMessage":
+        return cls(
+            role=data.get("role", ""),
+            content=data.get("content", ""),
+            tool_name=data.get("tool_name", ""),
+            timestamp=data.get("timestamp", ""),
+        )
+
+
+@dataclass
 class TaskResult:
     """Result of a single task execution."""
     task_id: str
@@ -231,9 +257,16 @@ class TaskResult:
     # Metrics
     metrics: TaskMetrics = field(default_factory=TaskMetrics)
 
-    # Logs
-    conversation_log: str = ""
+    # Logs - structured conversation
+    conversation_messages: list[ConversationMessage] = field(default_factory=list)
+    conversation_log: str = ""  # Raw output (kept for backwards compatibility)
     error_message: str = ""
+
+    # Conversation statistics (from Claude JSON output)
+    total_turns: int = 0
+    api_input_tokens: int = 0
+    api_output_tokens: int = 0
+    api_total_cost_usd: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -262,7 +295,15 @@ class TaskResult:
                 "lines_of_code": self.metrics.lines_of_code,
                 "cyclomatic_complexity": self.metrics.cyclomatic_complexity,
             },
-            "conversation_log": self.conversation_log,
+            # Structured conversation data
+            "conversation": {
+                "messages": [m.to_dict() for m in self.conversation_messages],
+                "total_turns": self.total_turns,
+                "api_input_tokens": self.api_input_tokens,
+                "api_output_tokens": self.api_output_tokens,
+                "api_total_cost_usd": self.api_total_cost_usd,
+            },
+            "conversation_log": self.conversation_log,  # Raw output for backwards compatibility
             "error_message": self.error_message,
         }
 
