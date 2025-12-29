@@ -124,7 +124,7 @@ class BenchmarkRunner:
         self.config = config
         self.collector = MetricsCollector()
 
-    def load_tasks(self, tier: str | None = None) -> list[Task]:
+    def load_tasks(self, tiers: list[str] | None = None) -> list[Task]:
         """
         Load tasks from the tasks directory.
 
@@ -133,7 +133,7 @@ class BenchmarkRunner:
         - Other tiers: sorted alphabetically by task ID
 
         Args:
-            tier: Optional tier filter ('tier1_standard' or 'tier2_contracts')
+            tiers: Optional list of tier filters (e.g., ['tier1_standard', 'tier2_contracts'])
 
         Returns:
             List of Task objects
@@ -144,8 +144,8 @@ class BenchmarkRunner:
             if not task_dir.is_dir():
                 continue
 
-            # Filter by tier if specified
-            if tier and task_dir.name != tier:
+            # Filter by tiers if specified
+            if tiers and task_dir.name not in tiers:
                 continue
 
             for task_file in sorted(task_dir.glob("*.json")):
@@ -902,7 +902,9 @@ def main():
     parser.add_argument(
         "--tier",
         choices=["tier1_standard", "tier2_contracts", "tier3_integration", "tier4_swe"],
-        help="Filter tasks by tier",
+        action="append",
+        dest="tiers",
+        help="Filter tasks by tier (can be specified multiple times, e.g., --tier tier1_standard --tier tier2_contracts)",
     )
 
     parser.add_argument(
@@ -1062,7 +1064,7 @@ def main():
     runner = BenchmarkRunner(config)
 
     # Load tasks
-    tasks = runner.load_tasks(tier=args.tier)
+    tasks = runner.load_tasks(tiers=args.tiers)
 
     if args.task:
         tasks = [t for t in tasks if t.id == args.task]
