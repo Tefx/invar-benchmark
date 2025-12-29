@@ -1,0 +1,18 @@
+{
+  "id": "task_101_range_validator",
+  "name": "Range Validator with Contracts",
+  "description": "Implement range validation functions with proper precondition and postcondition contracts.",
+  "tier": "tier2_contracts",
+  "prompt": "Implement range validation utilities in `src/core/validators.py`:\n\n1. `validate_range(value: int, min_val: int, max_val: int) -> bool`\n   - Returns True if min_val <= value <= max_val\n   - Precondition: min_val <= max_val\n\n2. `clamp(value: int, min_val: int, max_val: int) -> int`\n   - Returns value clamped to [min_val, max_val]\n   - Precondition: min_val <= max_val\n   - Postcondition: result is in [min_val, max_val]\n\n3. `normalize(value: float, min_val: float, max_val: float) -> float`\n   - Returns (value - min_val) / (max_val - min_val)\n   - Precondition: min_val < max_val\n   - Postcondition: result is in [0, 1] when value is in [min_val, max_val]\n\nUse @pre and @post decorators from deal library. Write comprehensive doctests.",
+  "initial_files": {
+    "src/core/__init__.py": "",
+    "src/shell/__init__.py": "",
+    "tests/__init__.py": "",
+    "pyproject.toml": "[project]\nname = \"task\"\nversion = \"0.1.0\"\n\n[project.optional-dependencies]\ndev = [\"deal\", \"pytest\"]\n"
+  },
+  "test_file": "import pytest\nfrom src.core.validators import validate_range, clamp, normalize\n\n\ndef test_validate_in_range():\n    assert validate_range(5, 0, 10) is True\n\n\ndef test_validate_at_boundary():\n    assert validate_range(0, 0, 10) is True\n    assert validate_range(10, 0, 10) is True\n\n\ndef test_validate_out_of_range():\n    assert validate_range(-1, 0, 10) is False\n    assert validate_range(11, 0, 10) is False\n\n\ndef test_clamp_in_range():\n    assert clamp(5, 0, 10) == 5\n\n\ndef test_clamp_below():\n    assert clamp(-5, 0, 10) == 0\n\n\ndef test_clamp_above():\n    assert clamp(15, 0, 10) == 10\n\n\ndef test_normalize_middle():\n    assert normalize(5.0, 0.0, 10.0) == 0.5\n\n\ndef test_normalize_boundaries():\n    assert normalize(0.0, 0.0, 10.0) == 0.0\n    assert normalize(10.0, 0.0, 10.0) == 1.0\n",
+  "hidden_test_file": "import pytest\nfrom src.core.validators import validate_range, clamp, normalize\n\n\ndef test_validate_single_point_range():\n    assert validate_range(5, 5, 5) is True\n    assert validate_range(4, 5, 5) is False\n\n\ndef test_clamp_single_point():\n    assert clamp(3, 5, 5) == 5\n    assert clamp(7, 5, 5) == 5\n\n\ndef test_normalize_negative_range():\n    result = normalize(0.0, -10.0, 10.0)\n    assert abs(result - 0.5) < 0.0001\n\n\ndef test_normalize_outside_range():\n    # Should still work, just return values outside [0, 1]\n    result = normalize(20.0, 0.0, 10.0)\n    assert result == 2.0\n\n\ndef test_clamp_negative_range():\n    assert clamp(-15, -20, -10) == -15\n    assert clamp(-25, -20, -10) == -20\n    assert clamp(-5, -20, -10) == -10\n\n\n# Contract violation tests (these should fail if contracts are correct)\ndef test_validate_invalid_range_order():\n    # min > max should violate precondition\n    try:\n        validate_range(5, 10, 0)\n        # If no exception, contracts not enforced\n    except Exception:\n        pass  # Expected\n",
+  "expected_files": ["src/core/validators.py"],
+  "tags": ["contracts", "validation", "precondition", "postcondition"],
+  "difficulty": "medium"
+}

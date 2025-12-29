@@ -1,0 +1,13 @@
+{
+  "id": "task_004_raindrops",
+  "name": "Raindrops",
+  "description": "Convert a number to raindrop sounds based on factors",
+  "tier": "tier1_standard",
+  "prompt": "Create a function `convert(number)` that converts a number to a string of raindrop sounds. If the number has 3 as a factor, add 'Pling'. If it has 5 as a factor, add 'Plang'. If it has 7 as a factor, add 'Plong'. If the number has none of these as factors, return the number as a string. Place the implementation in src/core/raindrops.py",
+  "initial_files": {},
+  "test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.raindrops import convert\n\ndef test_1():\n    assert convert(1) == \"1\"\n\ndef test_3():\n    assert convert(3) == \"Pling\"\n\ndef test_5():\n    assert convert(5) == \"Plang\"\n\ndef test_7():\n    assert convert(7) == \"Plong\"\n\ndef test_15():\n    assert convert(15) == \"PlingPlang\"\n\ndef test_21():\n    assert convert(21) == \"PlingPlong\"\n\ndef test_35():\n    assert convert(35) == \"PlangPlong\"\n\ndef test_105():\n    assert convert(105) == \"PlingPlangPlong\"\n",
+  "hidden_test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.raindrops import convert\n\ndef test_52():\n    # Not divisible by 3, 5, or 7\n    assert convert(52) == \"52\"\n\ndef test_large_number():\n    assert convert(3 * 5 * 7 * 11) == \"PlingPlangPlong\"\n\ndef test_zero():\n    # Zero is divisible by everything\n    assert convert(0) == \"PlingPlangPlong\"\n\ndef test_negative_divisible():\n    # Negative numbers that are divisible\n    assert convert(-15) == \"PlingPlang\"\n",
+  "expected_files": ["src/core/raindrops.py"],
+  "tags": ["factors", "string-building", "exercism"],
+  "difficulty": "easy"
+}

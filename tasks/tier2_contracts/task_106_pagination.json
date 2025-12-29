@@ -1,0 +1,20 @@
+{
+  "id": "task_106_pagination",
+  "name": "Pagination Parameters",
+  "description": "Implement pagination with parameter validation",
+  "tier": "tier2_contracts",
+  "prompt": "Create a Paginator class for API pagination with the following:\n- `__init__(self, total_items: int, page: int = 1, per_page: int = 10)`\n  - total_items must be >= 0\n  - page must be >= 1\n  - per_page must be between 1 and 100 inclusive\n- `page` property - Current page number\n- `per_page` property - Items per page\n- `total_pages` property - Total number of pages (at least 1 even if no items)\n- `has_next` property - True if there's a next page\n- `has_prev` property - True if there's a previous page\n- `offset` property - Starting index for current page (0-based)\n- `go_to_page(self, page: int)` - Navigate to a specific page\n- `next_page(self)` - Go to next page (no-op if on last page)\n- `prev_page(self)` - Go to previous page (no-op if on first page)\n\nRaise ValueError for invalid parameters. Place the implementation in src/core/pagination.py",
+  "initial_files": {},
+  "test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.pagination import Paginator\n\ndef test_basic_pagination():\n    p = Paginator(total_items=100, page=1, per_page=10)\n    assert p.total_pages == 10\n    assert p.offset == 0\n\ndef test_second_page():\n    p = Paginator(total_items=100, page=2, per_page=10)\n    assert p.offset == 10\n\ndef test_has_next_prev():\n    p = Paginator(total_items=100, page=5, per_page=10)\n    assert p.has_next is True\n    assert p.has_prev is True\n\ndef test_first_page_no_prev():\n    p = Paginator(total_items=100, page=1, per_page=10)\n    assert p.has_prev is False\n\ndef test_last_page_no_next():\n    p = Paginator(total_items=100, page=10, per_page=10)\n    assert p.has_next is False\n\ndef test_navigation():\n    p = Paginator(total_items=100, page=1, per_page=10)\n    p.next_page()\n    assert p.page == 2\n    p.prev_page()\n    assert p.page == 1\n",
+  "hidden_test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.pagination import Paginator\n\n# Support both ValueError and deal.PreContractError for contract violations\ntry:\n    import deal\n    CONTRACT_ERROR = (ValueError, deal.PreContractError)\nexcept ImportError:\n    CONTRACT_ERROR = ValueError\n\n\ndef test_page_zero():\n    with pytest.raises(CONTRACT_ERROR):\n        Paginator(total_items=100, page=0, per_page=10)\n\ndef test_negative_page():\n    with pytest.raises(CONTRACT_ERROR):\n        Paginator(total_items=100, page=-1, per_page=10)\n\ndef test_per_page_zero():\n    with pytest.raises(CONTRACT_ERROR):\n        Paginator(total_items=100, page=1, per_page=0)\n\ndef test_per_page_over_100():\n    with pytest.raises(CONTRACT_ERROR):\n        Paginator(total_items=100, page=1, per_page=101)\n\ndef test_negative_total_items():\n    with pytest.raises(CONTRACT_ERROR):\n        Paginator(total_items=-1, page=1, per_page=10)\n\ndef test_empty_collection():\n    p = Paginator(total_items=0, page=1, per_page=10)\n    assert p.total_pages == 1  # At least 1 page even if empty\n    assert p.has_next is False\n    assert p.has_prev is False\n\ndef test_partial_last_page():\n    p = Paginator(total_items=95, page=10, per_page=10)\n    assert p.total_pages == 10\n\ndef test_go_to_invalid_page():\n    p = Paginator(total_items=100, page=1, per_page=10)\n    with pytest.raises(CONTRACT_ERROR):\n        p.go_to_page(0)\n    with pytest.raises(CONTRACT_ERROR):\n        p.go_to_page(11)  # Only 10 pages\n\ndef test_next_on_last_page():\n    p = Paginator(total_items=100, page=10, per_page=10)\n    p.next_page()  # Should be no-op\n    assert p.page == 10\n\ndef test_prev_on_first_page():\n    p = Paginator(total_items=100, page=1, per_page=10)\n    p.prev_page()  # Should be no-op\n    assert p.page == 1\n",
+  "expected_files": [
+    "src/core/pagination.py"
+  ],
+  "tags": [
+    "class",
+    "precondition",
+    "api",
+    "validation"
+  ],
+  "difficulty": "medium"
+}

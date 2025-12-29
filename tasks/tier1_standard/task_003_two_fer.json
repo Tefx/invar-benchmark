@@ -1,0 +1,13 @@
+{
+  "id": "task_003_two_fer",
+  "name": "Two Fer",
+  "description": "Create a phrase like 'One for X, one for me'",
+  "tier": "tier1_standard",
+  "prompt": "Create a function `two_fer(name=None)` that returns a string in the format 'One for X, one for me.' where X is the given name. If no name is given, use 'you' as the default. Place the implementation in src/core/two_fer.py",
+  "initial_files": {},
+  "test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.two_fer import two_fer\n\ndef test_no_name_given():\n    assert two_fer() == \"One for you, one for me.\"\n\ndef test_a_name_given():\n    assert two_fer(\"Alice\") == \"One for Alice, one for me.\"\n\ndef test_another_name_given():\n    assert two_fer(\"Bob\") == \"One for Bob, one for me.\"\n",
+  "hidden_test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.two_fer import two_fer\n\ndef test_empty_string():\n    # Edge case: empty string should be used as-is, not defaulted\n    assert two_fer(\"\") == \"One for , one for me.\"\n\ndef test_name_with_spaces():\n    assert two_fer(\"Mary Ann\") == \"One for Mary Ann, one for me.\"\n\ndef test_name_with_special_chars():\n    assert two_fer(\"O'Brien\") == \"One for O'Brien, one for me.\"\n\ndef test_explicit_none():\n    assert two_fer(None) == \"One for you, one for me.\"\n",
+  "expected_files": ["src/core/two_fer.py"],
+  "tags": ["string", "default-parameter", "exercism"],
+  "difficulty": "easy"
+}

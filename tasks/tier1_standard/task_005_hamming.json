@@ -1,0 +1,20 @@
+{
+  "id": "task_005_hamming",
+  "name": "Hamming Distance",
+  "description": "Calculate the Hamming distance between two DNA strands",
+  "tier": "tier1_standard",
+  "prompt": "Create a function `distance(strand_a, strand_b)` that calculates the Hamming distance between two DNA strands. The Hamming distance is the number of positions where the corresponding characters are different. If the strands are of different lengths, raise a ValueError with message 'Strands must be of equal length.'. Place the implementation in src/core/hamming.py",
+  "initial_files": {},
+  "test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.hamming import distance\n\ndef test_empty_strands():\n    assert distance(\"\", \"\") == 0\n\ndef test_single_identical():\n    assert distance(\"A\", \"A\") == 0\n\ndef test_single_different():\n    assert distance(\"G\", \"T\") == 1\n\ndef test_complete_hamming_distance():\n    assert distance(\"GGACTGA\", \"GGACTGA\") == 0\n\ndef test_small_hamming_distance():\n    assert distance(\"GGACGGATTCTG\", \"AGGACGGATTCT\") == 9\n\ndef test_different_lengths_raises():\n    with pytest.raises(ValueError) as exc:\n        distance(\"AATG\", \"AAA\")\n    assert \"equal length\" in str(exc.value)\n",
+  "hidden_test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.hamming import distance\n\n# Support both ValueError and deal.PreContractError for contract violations\ntry:\n    import deal\n    CONTRACT_ERROR = (ValueError, deal.PreContractError)\nexcept ImportError:\n    CONTRACT_ERROR = ValueError\n\n\ndef test_long_identical_strands():\n    strand = \"GAGCCTACTAACGGGAT\" * 10\n    assert distance(strand, strand) == 0\n\ndef test_long_different_strands():\n    strand_a = \"GAGCCTACTAACGGGAT\"\n    strand_b = \"CATCGTAATGACGGTAT\"\n    assert distance(strand_a, strand_b) == 7\n\ndef test_first_empty_second_not():\n    with pytest.raises(CONTRACT_ERROR):\n        distance(\"\", \"G\")\n\ndef test_first_not_empty_second_empty():\n    with pytest.raises(CONTRACT_ERROR):\n        distance(\"G\", \"\")\n",
+  "expected_files": [
+    "src/core/hamming.py"
+  ],
+  "tags": [
+    "string",
+    "comparison",
+    "error-handling",
+    "exercism"
+  ],
+  "difficulty": "easy"
+}

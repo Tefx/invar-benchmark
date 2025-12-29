@@ -1,0 +1,13 @@
+{
+  "id": "task_006_isogram",
+  "name": "Isogram",
+  "description": "Determine if a word is an isogram (no repeating letters)",
+  "tier": "tier1_standard",
+  "prompt": "Create a function `is_isogram(string)` that determines if a word or phrase is an isogram. An isogram is a word or phrase without a repeating letter, however spaces and hyphens are allowed to appear multiple times. The check should be case-insensitive. Place the implementation in src/core/isogram.py",
+  "initial_files": {},
+  "test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.isogram import is_isogram\n\ndef test_empty_string():\n    assert is_isogram(\"\") is True\n\ndef test_isogram_lowercase():\n    assert is_isogram(\"isogram\") is True\n\ndef test_not_isogram():\n    assert is_isogram(\"eleven\") is False\n\ndef test_isogram_with_hyphen():\n    assert is_isogram(\"six-year-old\") is True\n\ndef test_made_up_with_hyphen():\n    assert is_isogram(\"thumbscrew-japingly\") is True\n\ndef test_hypothetical_word():\n    assert is_isogram(\"Alphabet\") is False\n",
+  "hidden_test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.isogram import is_isogram\n\ndef test_duplicated_letter_mixed_case():\n    assert is_isogram(\"alphAbet\") is False\n\ndef test_isogram_with_spaces():\n    assert is_isogram(\"lumberjacks\") is True\n\ndef test_isogram_with_multiple_spaces():\n    assert is_isogram(\"the quick brown\") is False  # has 'h' and multiple spaces\n\ndef test_all_same_letter():\n    assert is_isogram(\"aaaa\") is False\n\ndef test_only_spaces():\n    assert is_isogram(\"   \") is True\n\ndef test_only_hyphens():\n    assert is_isogram(\"---\") is True\n",
+  "expected_files": ["src/core/isogram.py"],
+  "tags": ["string", "set", "case-insensitive", "exercism"],
+  "difficulty": "easy"
+}

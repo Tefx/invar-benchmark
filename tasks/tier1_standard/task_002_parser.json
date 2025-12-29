@@ -1,0 +1,17 @@
+{
+  "id": "task_002_parser",
+  "name": "Parse Key-Value Config",
+  "description": "Implement a configuration parser that handles key=value format with proper error handling.",
+  "tier": "tier1_standard",
+  "prompt": "Implement a function `parse_config(content: str) -> dict[str, str]` in `src/core/config_parser.py` that parses a configuration string.\n\nFormat:\n- Each line is `key=value`\n- Lines starting with `#` are comments\n- Empty lines are ignored\n- Keys are trimmed of whitespace\n- Values are trimmed of whitespace\n\nRequirements:\n1. Handle empty input\n2. Handle comments\n3. Handle lines without `=` (skip them)\n4. Handle duplicate keys (last value wins)\n\nWrite tests in `tests/test_config.py`.",
+  "initial_files": {
+    "src/core/__init__.py": "",
+    "src/shell/__init__.py": "",
+    "tests/__init__.py": ""
+  },
+  "test_file": "import pytest\nfrom src.core.config_parser import parse_config\n\n\ndef test_parse_basic():\n    result = parse_config(\"key=value\")\n    assert result == {\"key\": \"value\"}\n\n\ndef test_parse_multiple():\n    content = \"a=1\\nb=2\\nc=3\"\n    result = parse_config(content)\n    assert result == {\"a\": \"1\", \"b\": \"2\", \"c\": \"3\"}\n\n\ndef test_parse_comments():\n    content = \"# comment\\nkey=value\"\n    result = parse_config(content)\n    assert result == {\"key\": \"value\"}\n\n\ndef test_parse_empty():\n    assert parse_config(\"\") == {}\n",
+  "hidden_test_file": "import pytest\nfrom src.core.config_parser import parse_config\n\n\ndef test_parse_whitespace():\n    result = parse_config(\"  key  =  value  \")\n    assert result == {\"key\": \"value\"}\n\n\ndef test_parse_duplicate_keys():\n    content = \"key=first\\nkey=second\"\n    result = parse_config(content)\n    assert result == {\"key\": \"second\"}\n\n\ndef test_parse_no_equals():\n    content = \"valid=yes\\ninvalid line\\nalso_valid=yes\"\n    result = parse_config(content)\n    assert \"valid\" in result\n    assert \"also_valid\" in result\n    assert len(result) == 2\n\n\ndef test_parse_empty_value():\n    result = parse_config(\"key=\")\n    assert result == {\"key\": \"\"}\n\n\ndef test_parse_equals_in_value():\n    result = parse_config(\"url=http://example.com?a=b\")\n    assert result == {\"url\": \"http://example.com?a=b\"}\n",
+  "expected_files": ["src/core/config_parser.py"],
+  "tags": ["parsing", "string", "edge-cases"],
+  "difficulty": "medium"
+}

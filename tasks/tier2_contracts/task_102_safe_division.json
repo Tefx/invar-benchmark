@@ -1,0 +1,18 @@
+{
+  "id": "task_102_safe_division",
+  "name": "Safe Division with Result Type",
+  "description": "Implement safe division operations using Result type for error handling.",
+  "tier": "tier2_contracts",
+  "prompt": "Implement safe math operations in `src/shell/math_ops.py` using Result type:\n\n1. `safe_divide(a: float, b: float) -> Result[float, str]`\n   - Returns Success(a/b) if b != 0\n   - Returns Failure(\"Division by zero\") if b == 0\n\n2. `safe_sqrt(x: float) -> Result[float, str]`\n   - Returns Success(sqrt(x)) if x >= 0\n   - Returns Failure(\"Cannot take square root of negative number\") if x < 0\n\n3. `safe_log(x: float) -> Result[float, str]`\n   - Returns Success(log(x)) if x > 0\n   - Returns Failure(\"Logarithm undefined for non-positive numbers\") if x <= 0\n\n4. `chain_operations(value: float, divisor: float) -> Result[float, str]`\n   - Compute: sqrt(value) / divisor\n   - Chain the Result operations properly\n   - Propagate any errors\n\nUse the `returns` library. Write tests in `tests/test_math_ops.py`.",
+  "initial_files": {
+    "src/core/__init__.py": "",
+    "src/shell/__init__.py": "",
+    "tests/__init__.py": "",
+    "pyproject.toml": "[project]\nname = \"task\"\nversion = \"0.1.0\"\n\n[project.optional-dependencies]\ndev = [\"returns\", \"pytest\"]\n"
+  },
+  "test_file": "import pytest\nfrom returns.result import Success, Failure\nfrom src.shell.math_ops import safe_divide, safe_sqrt, safe_log, chain_operations\n\n\ndef test_divide_success():\n    result = safe_divide(10.0, 2.0)\n    assert isinstance(result, Success)\n    assert result.unwrap() == 5.0\n\n\ndef test_divide_by_zero():\n    result = safe_divide(10.0, 0.0)\n    assert isinstance(result, Failure)\n\n\ndef test_sqrt_positive():\n    result = safe_sqrt(4.0)\n    assert isinstance(result, Success)\n    assert result.unwrap() == 2.0\n\n\ndef test_sqrt_negative():\n    result = safe_sqrt(-1.0)\n    assert isinstance(result, Failure)\n\n\ndef test_log_positive():\n    result = safe_log(1.0)\n    assert isinstance(result, Success)\n    assert result.unwrap() == 0.0\n\n\ndef test_log_zero():\n    result = safe_log(0.0)\n    assert isinstance(result, Failure)\n",
+  "hidden_test_file": "import pytest\nimport math\nfrom returns.result import Success, Failure\nfrom src.shell.math_ops import safe_divide, safe_sqrt, safe_log, chain_operations\n\n\ndef test_sqrt_zero():\n    result = safe_sqrt(0.0)\n    assert isinstance(result, Success)\n    assert result.unwrap() == 0.0\n\n\ndef test_log_e():\n    result = safe_log(math.e)\n    assert isinstance(result, Success)\n    assert abs(result.unwrap() - 1.0) < 0.0001\n\n\ndef test_chain_success():\n    result = chain_operations(16.0, 2.0)\n    assert isinstance(result, Success)\n    assert result.unwrap() == 2.0  # sqrt(16) / 2 = 4 / 2 = 2\n\n\ndef test_chain_sqrt_fails():\n    result = chain_operations(-1.0, 2.0)\n    assert isinstance(result, Failure)\n\n\ndef test_chain_divide_fails():\n    result = chain_operations(16.0, 0.0)\n    assert isinstance(result, Failure)\n\n\ndef test_divide_precision():\n    result = safe_divide(1.0, 3.0)\n    assert isinstance(result, Success)\n    assert abs(result.unwrap() - 0.333333) < 0.001\n",
+  "expected_files": ["src/shell/math_ops.py"],
+  "tags": ["result-type", "error-handling", "shell", "chaining"],
+  "difficulty": "medium"
+}

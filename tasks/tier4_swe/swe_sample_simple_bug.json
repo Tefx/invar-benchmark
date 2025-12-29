@@ -1,0 +1,27 @@
+{
+  "id": "swe_sample_simple_bug",
+  "name": "Sample Simple Bug Fix",
+  "description": "A simple bug fix task demonstrating SWE-bench format",
+  "tier": "tier4_swe",
+  "prompt": "Fix the following bug in the calculator module.\n\n## Issue\n\nThe `divide` function returns incorrect results for negative numbers.\nWhen dividing -10 by 2, it returns 5 instead of -5.\n\n## Expected Behavior\n\n```python\ndivide(-10, 2)  # Should return -5.0\ndivide(10, -2)  # Should return -5.0\n```\n\n## Current Behavior\n\n```python\ndivide(-10, 2)  # Returns 5.0 (wrong!)\ndivide(10, -2)  # Returns 5.0 (wrong!)\n```\n\nPlease fix the bug in src/core/calculator.py",
+  "initial_files": {
+    "src/core/__init__.py": "# Core module",
+    "src/core/calculator.py": "def divide(a: float, b: float) -> float:\n    \"\"\"Divide a by b.\n    \n    >>> divide(10, 2)\n    5.0\n    >>> divide(6, 3)\n    2.0\n    \"\"\"\n    # BUG: abs() removes sign incorrectly\n    return abs(a) / abs(b)\n"
+  },
+  "test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.calculator import divide\n\ndef test_divide_positive():\n    assert divide(10, 2) == 5.0\n\ndef test_divide_simple():\n    assert divide(6, 3) == 2.0\n",
+  "hidden_test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.calculator import divide\n\ndef test_divide_negative_numerator():\n    assert divide(-10, 2) == -5.0\n\ndef test_divide_negative_denominator():\n    assert divide(10, -2) == -5.0\n\ndef test_divide_both_negative():\n    assert divide(-10, -2) == 5.0\n\ndef test_divide_zero_numerator():\n    assert divide(0, 5) == 0.0\n",
+  "expected_files": ["src/core/calculator.py"],
+  "tags": ["swe-bench", "sample", "bug-fix"],
+  "difficulty": "easy",
+  "swe_metadata": {
+    "instance_id": "sample__simple-bug-001",
+    "repo": "sample/calculator",
+    "base_commit": "",
+    "test_patch": "",
+    "gold_patch": "--- a/src/core/calculator.py\n+++ b/src/core/calculator.py\n@@ -1,7 +1,6 @@\n def divide(a: float, b: float) -> float:\n     \"\"\"Divide a by b.\n     \n     >>> divide(10, 2)\n     5.0\n     >>> divide(6, 3)\n     2.0\n     \"\"\"\n-    # BUG: abs() removes sign incorrectly\n-    return abs(a) / abs(b)\n+    return a / b\n",
+    "fail_to_pass": ["test_divide_negative_numerator", "test_divide_negative_denominator"],
+    "pass_to_pass": ["test_divide_positive", "test_divide_simple", "test_divide_both_negative"],
+    "version": "",
+    "environment_setup_commit": ""
+  }
+}

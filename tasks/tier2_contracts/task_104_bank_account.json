@@ -1,0 +1,20 @@
+{
+  "id": "task_104_bank_account",
+  "name": "Bank Account Transfer",
+  "description": "Implement bank account with balance constraints",
+  "tier": "tier2_contracts",
+  "prompt": "Create a BankAccount class with the following methods:\n- `__init__(self, initial_balance: float)` - Create account with initial balance (must be >= 0)\n- `deposit(self, amount: float)` - Add amount to balance (amount must be > 0)\n- `withdraw(self, amount: float)` - Remove amount from balance (amount must be > 0 and <= current balance)\n- `transfer(self, other: 'BankAccount', amount: float)` - Transfer amount to another account\n- `balance` property - Get current balance\n\nAll operations should raise ValueError for invalid inputs. Consider using contracts (@pre/@post) to enforce invariants. Place the implementation in src/core/bank_account.py",
+  "initial_files": {},
+  "test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.bank_account import BankAccount\n\ndef test_create_account():\n    account = BankAccount(100.0)\n    assert account.balance == 100.0\n\ndef test_deposit():\n    account = BankAccount(100.0)\n    account.deposit(50.0)\n    assert account.balance == 150.0\n\ndef test_withdraw():\n    account = BankAccount(100.0)\n    account.withdraw(30.0)\n    assert account.balance == 70.0\n\ndef test_transfer():\n    account1 = BankAccount(100.0)\n    account2 = BankAccount(50.0)\n    account1.transfer(account2, 25.0)\n    assert account1.balance == 75.0\n    assert account2.balance == 75.0\n",
+  "hidden_test_file": "import pytest\nimport sys\nsys.path.insert(0, 'src')\nfrom core.bank_account import BankAccount\n\n# Support both ValueError and deal.PreContractError for contract violations\ntry:\n    import deal\n    CONTRACT_ERROR = (ValueError, deal.PreContractError)\nexcept ImportError:\n    CONTRACT_ERROR = ValueError\n\n\ndef test_negative_initial_balance():\n    with pytest.raises(CONTRACT_ERROR):\n        BankAccount(-100.0)\n\ndef test_deposit_zero():\n    account = BankAccount(100.0)\n    with pytest.raises(CONTRACT_ERROR):\n        account.deposit(0)\n\ndef test_deposit_negative():\n    account = BankAccount(100.0)\n    with pytest.raises(CONTRACT_ERROR):\n        account.deposit(-50.0)\n\ndef test_withdraw_more_than_balance():\n    account = BankAccount(100.0)\n    with pytest.raises(CONTRACT_ERROR):\n        account.withdraw(150.0)\n\ndef test_withdraw_zero():\n    account = BankAccount(100.0)\n    with pytest.raises(CONTRACT_ERROR):\n        account.withdraw(0)\n\ndef test_withdraw_negative():\n    account = BankAccount(100.0)\n    with pytest.raises(CONTRACT_ERROR):\n        account.withdraw(-10.0)\n\ndef test_transfer_insufficient_funds():\n    account1 = BankAccount(50.0)\n    account2 = BankAccount(100.0)\n    with pytest.raises(CONTRACT_ERROR):\n        account1.transfer(account2, 75.0)\n\ndef test_transfer_negative():\n    account1 = BankAccount(100.0)\n    account2 = BankAccount(50.0)\n    with pytest.raises(CONTRACT_ERROR):\n        account1.transfer(account2, -25.0)\n\ndef test_balance_never_negative_after_operations():\n    account = BankAccount(100.0)\n    account.withdraw(100.0)\n    assert account.balance >= 0\n",
+  "expected_files": [
+    "src/core/bank_account.py"
+  ],
+  "tags": [
+    "class",
+    "invariant",
+    "precondition",
+    "financial"
+  ],
+  "difficulty": "medium"
+}
