@@ -20,7 +20,7 @@ class BenchmarkConfig:
 
     # Experiment settings
     max_iterations: int = 10
-    timeout_seconds: int = 600  # 10 minutes per task
+    timeout_seconds: int = 1800  # 30 minutes per task
     parallel_tasks: int = 1  # Sequential by default
 
     # Claude Code settings
@@ -30,8 +30,8 @@ class BenchmarkConfig:
 
     # Execution mode settings (BM-02)
     execution_mode: str = "print"  # "print" | "interactive"
-    max_turns: int = 200  # Max turns for interactive mode
-    interactive_timeout: int = 600  # Timeout for interactive mode (seconds)
+    max_turns: int = 1000  # Max turns for interactive mode
+    interactive_timeout: int = 1800  # Timeout for interactive mode (30 minutes)
 
     # Routing mode settings (BM-05: Fair Benchmark)
     # natural_routing=True: No explicit /develop prefix, let CLAUDE.md routing rules activate
