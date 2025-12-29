@@ -183,6 +183,12 @@ def setup_workspace(
         if invar_dir.exists():
             shutil.copytree(invar_dir, workspace / ".invar")
 
+        # Copy .claude directory (skills definitions for Skill tool)
+        # Critical: Without this, /develop and other skills won't work
+        claude_dir = src_config / ".claude"
+        if claude_dir.exists():
+            shutil.copytree(claude_dir, workspace / ".claude")
+
     # Write initial task files
     for file_path, content in initial_files.items():
         full_path = workspace / file_path
@@ -455,6 +461,11 @@ def setup_swe_workspace(
         invar_dir = src_config / ".invar"
         if invar_dir.exists():
             shutil.copytree(invar_dir, workspace / ".invar")
+
+        # Copy .claude directory (skills definitions for Skill tool)
+        claude_dir = src_config / ".claude"
+        if claude_dir.exists():
+            shutil.copytree(claude_dir, workspace / ".claude")
 
     # Create tests directory for hidden tests
     (workspace / "tests").mkdir(exist_ok=True)
