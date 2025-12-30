@@ -22,6 +22,7 @@ class BenchmarkConfig:
     max_iterations: int = 10
     timeout_seconds: int = 1800  # 30 minutes per task
     parallel_tasks: int = 1  # Sequential by default
+    max_table_rows: int = 20  # Max rows in progress table (0 = unlimited)
 
     # Claude Code settings
     claude_command: str = "claude"

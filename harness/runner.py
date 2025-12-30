@@ -800,7 +800,7 @@ class BenchmarkRunner:
             """Run a single task (for parallel execution)."""
             return self.run_task(task, group, quiet=True)
 
-        with ProgressDisplay(tasks) as display:
+        with ProgressDisplay(tasks, max_rows=self.config.max_table_rows) as display:
             # Build list of (task, group) pairs
             work_items = [(task, group) for task in tasks for group in groups]
 
@@ -977,6 +977,14 @@ def main():
         help="Number of parallel tasks (default: 1, sequential)",
     )
 
+    parser.add_argument(
+        "--max-rows",
+        type=int,
+        default=20,
+        metavar="N",
+        help="Maximum rows in task table (default: 20, 0 for unlimited)",
+    )
+
     # Cache management (BM-03)
     parser.add_argument(
         "--cache-stats",
@@ -1046,6 +1054,7 @@ def main():
         max_turns=args.max_turns,
         interactive_timeout=args.interactive_timeout,
         parallel_tasks=args.parallel,
+        max_table_rows=args.max_rows,
         use_repo_cache=not args.no_cache,
         use_docker=args.docker,
         docker_timeout=args.docker_timeout,

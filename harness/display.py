@@ -148,10 +148,14 @@ class BenchmarkProgress:
 class ProgressDisplay:
     """Rich-based progress display for benchmark runner."""
 
-    def __init__(self, tasks: list[Task]) -> None:
+    # Maximum rows to display in task table (0 = unlimited)
+    MAX_TABLE_ROWS = 20
+
+    def __init__(self, tasks: list[Task], max_rows: int = 20) -> None:
         self.console = Console()
         self.progress_data = BenchmarkProgress(tasks=tasks)
         self.live: Live | None = None
+        self.max_rows = max_rows or self.MAX_TABLE_ROWS
 
         # Create progress bar
         self.progress = Progress(
@@ -192,7 +196,7 @@ class ProgressDisplay:
         )
 
     def _build_task_table(self) -> Table:
-        """Build the task status table."""
+        """Build the task status table with smart row limiting."""
         table = Table(
             show_header=True,
             header_style="bold",
@@ -205,7 +209,38 @@ class ProgressDisplay:
         table.add_column("Treatment", justify="center")
         table.add_column("Tier", justify="center", style="dim")
 
+        # Categorize tasks by status
+        running = []
+        completed = []
+        pending = []
+
         for task in self.progress_data.tasks:
+            tp = self.progress_data.task_progress[task.id]
+            if tp.control_status == "running" or tp.treatment_status == "running":
+                running.append(task)
+            elif tp.control_status == "completed" or tp.treatment_status == "completed":
+                completed.append(task)
+            else:
+                pending.append(task)
+
+        # Build display list: running first, then recent completed, then pending
+        display_tasks = []
+        display_tasks.extend(running)
+
+        # Add completed (most recent first - reversed order)
+        remaining = self.max_rows - len(display_tasks)
+        if remaining > 0 and completed:
+            display_tasks.extend(completed[-min(remaining // 2, len(completed)) :])
+
+        # Add pending
+        remaining = self.max_rows - len(display_tasks)
+        if remaining > 0 and pending:
+            display_tasks.extend(pending[: remaining])
+
+        # Track if we're hiding tasks
+        hidden_count = len(self.progress_data.tasks) - len(display_tasks)
+
+        for task in display_tasks:
             tp = self.progress_data.task_progress[task.id]
             tier = task.tier.value.split("_")[0]  # tier1 or tier2
 
@@ -219,6 +254,15 @@ class ProgressDisplay:
                 tp.get_control_display(),
                 tp.get_treatment_display(),
                 tier,
+            )
+
+        # Add summary row if tasks are hidden
+        if hidden_count > 0:
+            table.add_row(
+                f"[dim]... +{hidden_count} more tasks[/dim]",
+                "",
+                "",
+                "",
             )
 
         return table
